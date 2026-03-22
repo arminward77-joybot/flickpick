@@ -2126,139 +2126,3157 @@ body {
 
 <script>
 // ============================================================
-// TMDB API SERVICE
+// MOVIE DATABASE (100 movies from Excel)
 // ============================================================
-const TMDB = {
-  API_KEY: 'c8da188ad93375d4287057f21f67b9b8',
-  BASE: 'https://api.themoviedb.org/3',
-  IMG: 'https://image.tmdb.org/t/p',
-  genreMap: {},
-  genreList: [],
-  currentPage: 0,
-  totalPages: 1,
-  loading: false,
-
-  async init() {
-    const resp = await fetch(`${this.BASE}/genre/movie/list?api_key=${this.API_KEY}&language=en-US`);
-    const data = await resp.json();
-    this.genreList = data.genres || [];
-    this.genreList.forEach(g => { this.genreMap[g.id] = g.name; });
-  },
-
-  buildDiscoverParams(page, filters) {
-    const params = new URLSearchParams({
-      api_key: this.API_KEY,
-      language: 'en-US',
-      sort_by: 'popularity.desc',
-      include_adult: 'false',
-      include_video: 'false',
-      page: String(page),
-      'vote_count.gte': '200',
-      'vote_average.gte': '5',
-    });
-    if (filters && filters.genres && filters.genres.length > 0) {
-      const genreIds = filters.genres.map(name => {
-        const g = this.genreList.find(gl => gl.name === name);
-        return g ? g.id : null;
-      }).filter(Boolean);
-      if (genreIds.length) params.set('with_genres', genreIds.join(','));
-    }
-    if (filters && filters.yearMin) params.set('primary_release_date.gte', `${filters.yearMin}-01-01`);
-    if (filters && filters.yearMax) params.set('primary_release_date.lte', `${filters.yearMax}-12-31`);
-    if (filters && filters.mood) {
-      const g = this.genreList.find(gl => gl.name === filters.mood);
-      if (g) params.set('with_genres', String(g.id));
-    }
-    if (filters && filters.streaming && filters.streaming.length > 0) {
-      const providerIds = filters.streaming.map(name => STREAMING_PROVIDER_IDS[name]).filter(Boolean);
-      if (providerIds.length) {
-        params.set('with_watch_providers', providerIds.join('|'));
-        params.set('watch_region', 'US');
+const MOVIES = [
+  {
+    "id": 1,
+    "title": "The Shawshank Redemption",
+    "year": 1994,
+    "rating": 9.3,
+    "runtime": "142 min",
+    "genres": [
+      "Drama"
+    ],
+    "synopsis": "Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMDFkYTc0MGEtZmNhMC00ZDIzLWFmNTEtODM1ZmRlYWMwMWFmXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Tim Robbins",
+        "role": ""
+      },
+      {
+        "name": "Morgan Freeman",
+        "role": ""
+      },
+      {
+        "name": "Bob Gunton",
+        "role": ""
       }
-    }
-    return params;
+    ]
   },
-
-  async fetchPage(page, filters) {
-    const params = this.buildDiscoverParams(page, filters);
-    const resp = await fetch(`${this.BASE}/discover/movie?${params}`);
-    const data = await resp.json();
-    this.totalPages = data.total_pages || 1;
-    return (data.results || []).map(m => this.mapMovie(m));
-  },
-
-  async fetchDetails(movieId) {
-    const resp = await fetch(`${this.BASE}/movie/${movieId}?api_key=${this.API_KEY}&language=en-US&append_to_response=credits,watch/providers`);
-    return resp.json();
-  },
-
-  mapMovie(tmdb) {
-    return {
-      id: tmdb.id,
-      title: tmdb.title || 'Untitled',
-      year: tmdb.release_date ? parseInt(tmdb.release_date.substring(0, 4)) : null,
-      rating: tmdb.vote_average ? parseFloat(tmdb.vote_average.toFixed(1)) : 0,
-      runtime: tmdb.runtime ? `${tmdb.runtime} min` : null,
-      genres: (tmdb.genre_ids || []).map(id => this.genreMap[id]).filter(Boolean),
-      synopsis: tmdb.overview || 'No synopsis available.',
-      poster: tmdb.poster_path ? `${this.IMG}/w500${tmdb.poster_path}` : null,
-      backdrop: tmdb.backdrop_path ? `${this.IMG}/w780${tmdb.backdrop_path}` : null,
-      streaming: [],
-      cast: [],
-      _tmdbId: tmdb.id,
-      _detailsLoaded: false,
-    };
-  },
-
-  enrichFromDetails(movie, details) {
-    if (details.runtime) movie.runtime = `${details.runtime} min`;
-    if (details.genres) movie.genres = details.genres.map(g => g.name);
-    // Cast
-    if (details.credits && details.credits.cast) {
-      movie.cast = details.credits.cast.slice(0, 6).map(c => ({
-        name: c.name,
-        role: c.character || '',
-        profilePath: c.profile_path ? `${this.IMG}/w185${c.profile_path}` : null,
-      }));
-    }
-    // Streaming providers (US)
-    if (details['watch/providers'] && details['watch/providers'].results) {
-      const us = details['watch/providers'].results.US;
-      if (us) {
-        const providers = [...(us.flatrate || []), ...(us.ads || [])];
-        movie.streaming = providers.map(p => p.provider_name).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5);
+  {
+    "id": 2,
+    "title": "The Godfather",
+    "year": 1972,
+    "rating": 9.2,
+    "runtime": "175 min",
+    "genres": [
+      "Crime",
+      "Drama"
+    ],
+    "synopsis": "The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmUtYTAwNi00MTYxLWJmNWYtYzZlODY3ZTk3OTFlXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Marlon Brando",
+        "role": ""
+      },
+      {
+        "name": "Al Pacino",
+        "role": ""
+      },
+      {
+        "name": "James Caan",
+        "role": ""
       }
-    }
-    movie._detailsLoaded = true;
-    return movie;
+    ]
   },
-};
-
-// Map common streaming service names to TMDB provider IDs (US region)
-const STREAMING_PROVIDER_IDS = {
-  'Netflix': 8,
-  'Disney+': 337,
-  'Hulu': 15,
-  'Prime Video': 9,
-  'Amazon Prime Video': 9,
-  'Max': 1899,
-  'HBO Max': 384,
-  'Apple TV+': 350,
-  'Apple TV Plus': 350,
-  'Paramount+': 531,
-  'Paramount Plus': 531,
-  'Peacock': 386,
-  'Peacock Premium': 386,
-  'Tubi': 73,
-  'Crunchyroll': 283,
-};
+  {
+    "id": 3,
+    "title": "The Dark Knight",
+    "year": 2008,
+    "rating": 9.0,
+    "runtime": "152 min",
+    "genres": [
+      "Action",
+      "Crime",
+      "Drama"
+    ],
+    "synopsis": "When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Christian Bale",
+        "role": ""
+      },
+      {
+        "name": "Heath Ledger",
+        "role": ""
+      },
+      {
+        "name": "Aaron Eckhart",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "title": "The Godfather Part II",
+    "year": 1974,
+    "rating": 9.0,
+    "runtime": "202 min",
+    "genres": [
+      "Crime",
+      "Drama"
+    ],
+    "synopsis": "The early life and career of Vito Corleone in 1920s New York City is portrayed, while his son, Michael, expands and tightens his grip on the family crime syndicate.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMWMwMGQzZTItY2JlNC00OWZiLWIyMDctNDk2ZDQ2YjRjMWQ0XkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Al Pacino",
+        "role": ""
+      },
+      {
+        "name": "Robert De Niro",
+        "role": ""
+      },
+      {
+        "name": "Robert Duvall",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "title": "12 Angry Men",
+    "year": 1957,
+    "rating": 9.0,
+    "runtime": "96 min",
+    "genres": [
+      "Crime",
+      "Drama"
+    ],
+    "synopsis": "The jury in a New York City murder trial is frustrated by a single member whose skeptical caution forces them to more carefully consider the evidence before jumping to a hasty verdict.",
+    "streaming": [
+      "Prime Video",
+      "MGM+"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMWU4N2FjNzYtNTVkNC00NzQ0LTg0MjAtYTJlMjFhNGUxZDFmXkEyXkFqcGdeQXVyNjc1NTYyMjg@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Henry Fonda",
+        "role": ""
+      },
+      {
+        "name": "Lee J. Cobb",
+        "role": ""
+      },
+      {
+        "name": "Martin Balsam",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Schindler's List",
+    "year": 1993,
+    "rating": 9.0,
+    "runtime": "195 min",
+    "genres": [
+      "Biography",
+      "Drama",
+      "History"
+    ],
+    "synopsis": "In German-occupied Poland during World War II, industrialist Oskar Schindler gradually becomes concerned for his Jewish workforce after witnessing their persecution by the Nazis.",
+    "streaming": [
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNDE4OTMxMTctNmRhYy00NWE2LTg3YzItYTk3M2UwOTU5Njg4XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Liam Neeson",
+        "role": ""
+      },
+      {
+        "name": "Ralph Fiennes",
+        "role": ""
+      },
+      {
+        "name": "Ben Kingsley",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "title": "The Lord of the Rings: The Return of the King",
+    "year": 2003,
+    "rating": 9.0,
+    "runtime": "201 min",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Drama"
+    ],
+    "synopsis": "Gandalf and Aragorn lead the World of Men against Sauron's army to draw his gaze from Frodo and Sam as they approach Mount Doom with the One Ring.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNzA5ZDNlZWMtM2NhNS00NDJjLTk4NDItYTRmY2EwMWZlMTY3XkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Elijah Wood",
+        "role": ""
+      },
+      {
+        "name": "Viggo Mortensen",
+        "role": ""
+      },
+      {
+        "name": "Ian McKellen",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "title": "Pulp Fiction",
+    "year": 1994,
+    "rating": 8.9,
+    "runtime": "154 min",
+    "genres": [
+      "Crime",
+      "Drama"
+    ],
+    "synopsis": "The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTItNDJhZi00NzVlLWE3N2QtMGU5NTU3M2QwZVJmXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "John Travolta",
+        "role": ""
+      },
+      {
+        "name": "Uma Thurman",
+        "role": ""
+      },
+      {
+        "name": "Samuel L. Jackson",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "title": "The Lord of the Rings: The Fellowship of the Ring",
+    "year": 2001,
+    "rating": 8.8,
+    "runtime": "178 min",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Drama"
+    ],
+    "synopsis": "A meek Hobbit from the Shire and eight companions set out on a journey to destroy the powerful One Ring and save Middle-earth from the Dark Lord Sauron.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BN2EyZjM3NzUtNWUzMi00MTgxLWI0NTctMzY4M2VlOTdjZWRiXkEyXkFqcGdeQXVyNDUzOTQ5MjY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Elijah Wood",
+        "role": ""
+      },
+      {
+        "name": "Ian McKellen",
+        "role": ""
+      },
+      {
+        "name": "Orlando Bloom",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "title": "The Good  the Bad and the Ugly",
+    "year": 1966,
+    "rating": 8.8,
+    "runtime": "161 min",
+    "genres": [
+      "Adventure",
+      "Western"
+    ],
+    "synopsis": "A bounty hunting scam joins two men in an uneasy alliance against a third in a race to find a fortune in gold buried in a remote cemetery.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BOTQ5NDI3MTI4MF5BMl5BanBnXkFtZTgwNDQ4ODE5MDE@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Clint Eastwood",
+        "role": ""
+      },
+      {
+        "name": "Eli Wallach",
+        "role": ""
+      },
+      {
+        "name": "Lee Van Cleef",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "title": "Forrest Gump",
+    "year": 1994,
+    "rating": 8.8,
+    "runtime": "142 min",
+    "genres": [
+      "Drama",
+      "Romance"
+    ],
+    "synopsis": "The history of the United States from the 1950s to the '70s unfolds from the perspective of an Alabama man with an IQ of 75, who yearns to be reunited with his childhood sweetheart.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNWIwODRlZTUtY2U3ZS00Yzg1LWJhNzYtMmZiYmEyNmU1NjMzXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Tom Hanks",
+        "role": ""
+      },
+      {
+        "name": "Robin Wright",
+        "role": ""
+      },
+      {
+        "name": "Gary Sinise",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "title": "Fight Club",
+    "year": 1999,
+    "rating": 8.8,
+    "runtime": "139 min",
+    "genres": [
+      "Drama"
+    ],
+    "synopsis": "An insomniac office worker and a devil-may-care soap maker form an underground fight club that evolves into much more.",
+    "streaming": [
+      "Hulu",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMmEzNTkxYjQtZTc0MC00YTVjLTg5ZTEtZWMwOWVlYzY0NWIwXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Brad Pitt",
+        "role": ""
+      },
+      {
+        "name": "Edward Norton",
+        "role": ""
+      },
+      {
+        "name": "Meat Loaf",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "title": "The Lord of the Rings: The Two Towers",
+    "year": 2002,
+    "rating": 8.8,
+    "runtime": "179 min",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Drama"
+    ],
+    "synopsis": "While Frodo and Sam edge closer to Mordor with the help of the shifty Gollum, the divided fellowship makes a stand against Sauron's new ally, Saruman, and his hordes of Isengard.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZGMxZTdjNDYtNDEzIz00ZWZaNDg2YmItYjE5NDQwZjVmZWIzXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Elijah Wood",
+        "role": ""
+      },
+      {
+        "name": "Ian McKellen",
+        "role": ""
+      },
+      {
+        "name": "Viggo Mortensen",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "title": "Inception",
+    "year": 2010,
+    "rating": 8.8,
+    "runtime": "148 min",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Sci-Fi"
+    ],
+    "synopsis": "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
+    "streaming": [
+      "Hulu",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Leonardo DiCaprio",
+        "role": ""
+      },
+      {
+        "name": "Joseph Gordon-Levitt",
+        "role": ""
+      },
+      {
+        "name": "Elliot Page",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "title": "Star Wars: Episode V - The Empire Strikes Back",
+    "year": 1980,
+    "rating": 8.7,
+    "runtime": "124 min",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Fantasy"
+    ],
+    "synopsis": "After the Rebels are brutally overpowered by the Empire on the ice planet Hoth, Luke Skywalker begins Jedi training with Yoda, while his friends are pursued across the galaxy by Darth Vader.",
+    "streaming": [
+      "Disney+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BYmU1NDRjNDgtMzhiMi00NjZmLTg5NGItOThkMDcjYmExZWFlXkEyXkFqcGdeQXVyNjUwNzk3NDc@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Mark Hamill",
+        "role": ""
+      },
+      {
+        "name": "Harrison Ford",
+        "role": ""
+      },
+      {
+        "name": "Carrie Fisher",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "title": "The Matrix",
+    "year": 1999,
+    "rating": 8.7,
+    "runtime": "136 min",
+    "genres": [
+      "Action",
+      "Sci-Fi"
+    ],
+    "synopsis": "When a beautiful stranger leads computer hacker Neo to a forbidding underworld, he discovers the shocking truth--the life he knows is the elaborate deception of an evil cyber-intelligence.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Keanu Reeves",
+        "role": ""
+      },
+      {
+        "name": "Laurence Fishburne",
+        "role": ""
+      },
+      {
+        "name": "Carrie-Anne Moss",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "title": "Goodfellas",
+    "year": 1990,
+    "rating": 8.7,
+    "runtime": "145 min",
+    "genres": [
+      "Biography",
+      "Crime",
+      "Drama"
+    ],
+    "synopsis": "The story of Henry Hill and his life in the mob, covering his relationship with his wife Karen Hill and his mob partners Jimmy Conway and Tommy DeVito in the Italian-American crime syndicate.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BY2NkZjEzMDgtN2RjYy00YzM1LWE1YWQtOTEwYWVkOWY1NzMwXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Robert De Niro",
+        "role": ""
+      },
+      {
+        "name": "Ray Liotta",
+        "role": ""
+      },
+      {
+        "name": "Joe Pesci",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "title": "One Flew Over the Cuckoo's Nest",
+    "year": 1975,
+    "rating": 8.7,
+    "runtime": "133 min",
+    "genres": [
+      "Drama"
+    ],
+    "synopsis": "A criminal pleads insanity and is admitted to a mental institution, where he rebels against the oppressive nurse and rallies up the scared patients.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZjA0OWVhOTAtYWQxNi00YzNhLWI4ZjYtNjFjZTEyYjJlNDVlL2ltYWdlL2ltYWdlXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Jack Nicholson",
+        "role": ""
+      },
+      {
+        "name": "Louise Fletcher",
+        "role": ""
+      },
+      {
+        "name": "Michael Berryman",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "title": "Se7en",
+    "year": 1995,
+    "rating": 8.6,
+    "runtime": "127 min",
+    "genres": [
+      "Crime",
+      "Drama",
+      "Mystery"
+    ],
+    "synopsis": "Two detectives, a rookie and a veteran, hunt a serial killer who uses the seven deadly sins as his motives.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BOTE1NDk1NTEtMzg0YS00MDdjLWFkZDgtZDlhNWJiZDczMmRjXkEyXkFqcGdeQXVyNTIzOTk5ODM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Morgan Freeman",
+        "role": ""
+      },
+      {
+        "name": "Brad Pitt",
+        "role": ""
+      },
+      {
+        "name": "Kevin Spacey",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "title": "Seven Samurai",
+    "year": 1954,
+    "rating": 8.6,
+    "runtime": "207 min",
+    "genres": [
+      "Action",
+      "Drama"
+    ],
+    "synopsis": "A poor village under attack by bandits recruits seven unemployed samurai to help them defend themselves.",
+    "streaming": [
+      "Max",
+      "Criterion Channel"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNDgwODQyNDExOF5BMl5BanBnXkFtZTcwNzcyNjE1MQ@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Toshir\u00f4 Mifune",
+        "role": ""
+      },
+      {
+        "name": "Takashi Shimura",
+        "role": ""
+      },
+      {
+        "name": "Keiko Tsushima",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "title": "Interstellar",
+    "year": 2014,
+    "rating": 8.7,
+    "runtime": "169 min",
+    "genres": [
+      "Adventure",
+      "Drama",
+      "Sci-Fi"
+    ],
+    "synopsis": "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Matthew McConaughey",
+        "role": ""
+      },
+      {
+        "name": "Anne Hathaway",
+        "role": ""
+      },
+      {
+        "name": "Jessica Chastain",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "title": "It's a Wonderful Life",
+    "year": 1946,
+    "rating": 8.6,
+    "runtime": "130 min",
+    "genres": [
+      "Drama",
+      "Family",
+      "Fantasy"
+    ],
+    "synopsis": "An angel is sent from Heaven to help a desperately frustrated businessman by showing him what life would have been like if he had never existed.",
+    "streaming": [
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZjc4NDZhZWMtNGEzYS00ZWU2LThlM2ItNTA0YzQ0OTExMTEsXkEyXkFqcGdeQXVyNjUwMzI2NzQ@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "James Stewart",
+        "role": ""
+      },
+      {
+        "name": "Donna Reed",
+        "role": ""
+      },
+      {
+        "name": "Lionel Barrymore",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "title": "The Silence of the Lambs",
+    "year": 1991,
+    "rating": 8.6,
+    "runtime": "118 min",
+    "genres": [
+      "Crime",
+      "Drama",
+      "Thriller"
+    ],
+    "synopsis": "A young F.B.I. cadet must receive the help of an incarcerated and manipulative cannibal killer to help catch another serial killer, a madman who skins his victims.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNjNhZTk0ZmEtNjJhMi00YzFlLWE1YWEtYzM1M2EzNDVKZDc2XkEyXkFqcGdeQXVyMjUzOTY1NTc@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Jodie Foster",
+        "role": ""
+      },
+      {
+        "name": "Anthony Hopkins",
+        "role": ""
+      },
+      {
+        "name": "Lawrence A. Bonney",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "title": "City of God",
+    "year": 2002,
+    "rating": 8.6,
+    "runtime": "130 min",
+    "genres": [
+      "Crime",
+      "Drama"
+    ],
+    "synopsis": "In the slums of Rio, two kids' paths diverge as one struggles to become a photographer and the other a kingpin.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMGU5YWEyNDEtYWNlNi00ZWQ1LWE2NGEtYjZmYTExMGYxMTRjXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Alexandre Rodrigues",
+        "role": ""
+      },
+      {
+        "name": "Leandro Firmino",
+        "role": ""
+      },
+      {
+        "name": "Matheus Nachtergaele",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "title": "Saving Private Ryan",
+    "year": 1998,
+    "rating": 8.6,
+    "runtime": "169 min",
+    "genres": [
+      "Drama",
+      "War"
+    ],
+    "synopsis": "Following the Normandy Landings, a group of U.S. soldiers go behind enemy lines to retrieve a paratrooper whose brothers have been killed in action.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZjhkMDM4MWItZTVjOC00ZDRhLThmYTAtM2I5NzBmNmNlMzI1XkEyXkFqcGdeQXVyNDYyMDk5MTU@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Tom Hanks",
+        "role": ""
+      },
+      {
+        "name": "Matt Damon",
+        "role": ""
+      },
+      {
+        "name": "Tom Sizemore",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "title": "Life Is Beautiful",
+    "year": 1997,
+    "rating": 8.6,
+    "runtime": "116 min",
+    "genres": [
+      "Comedy",
+      "Drama",
+      "Romance"
+    ],
+    "synopsis": "When an open-minded Jewish waiter and his son become victims of the Holocaust, he uses a perfect mixture of will, humor, and imagination to protect his son from the dangers around their camp.",
+    "streaming": [
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BYmJmM2Q4NmMtYThmNC00ZjRlLWEyZmItZTIwMWFiNzgxMjc0XkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Roberto Benigni",
+        "role": ""
+      },
+      {
+        "name": "Nicoletta Braschi",
+        "role": ""
+      },
+      {
+        "name": "Giorgio Cantarini",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "title": "The Green Mile",
+    "year": 1999,
+    "rating": 8.6,
+    "runtime": "189 min",
+    "genres": [
+      "Crime",
+      "Drama",
+      "Fantasy"
+    ],
+    "synopsis": "The lives of guards on Death Row are affected by one of their charges: a black man accused of child murder and rape, yet who has a mysterious gift.",
+    "streaming": [
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTUxMzQyNjA5MF5BMl5BanBnXkFtZTYwOTU2NTY3._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Tom Hanks",
+        "role": ""
+      },
+      {
+        "name": "Michael Clarke Duncan",
+        "role": ""
+      },
+      {
+        "name": "David Morse",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "title": "Star Wars: Episode IV - A New Hope",
+    "year": 1977,
+    "rating": 8.6,
+    "runtime": "121 min",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Fantasy"
+    ],
+    "synopsis": "Luke Skywalker joins forces with a Jedi Knight, a cocky pilot, a Wookiee and two droids to save the galaxy from the Empire's world-destroying battle station.",
+    "streaming": [
+      "Disney+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BOTA5NjhiOTAtZWM0ZC00MWNhLThiMzEtZDFkOTk2OTU1ZDJkXkEyXkFqcGdeQXVyMTA4NDI1NTQx._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Mark Hamill",
+        "role": ""
+      },
+      {
+        "name": "Harrison Ford",
+        "role": ""
+      },
+      {
+        "name": "Carrie Fisher",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "title": "Terminator 2: Judgment Day",
+    "year": 1991,
+    "rating": 8.6,
+    "runtime": "137 min",
+    "genres": [
+      "Action",
+      "Sci-Fi"
+    ],
+    "synopsis": "A cyborg, identical to the one who failed to kill Sarah Connor, must now protect her ten-year-old son John from a more advanced and powerful cyborg.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMGU2NzRmZjUtNDY3Zi00NjljLTgwNjQtOThsNDlhNWI0ZTVmXkEyXkFqcGdeQXVyNTIzOTk5ODM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Arnold Schwarzenegger",
+        "role": ""
+      },
+      {
+        "name": "Linda Hamilton",
+        "role": ""
+      },
+      {
+        "name": "Edward Furlong",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "title": "Back to the Future",
+    "year": 1985,
+    "rating": 8.5,
+    "runtime": "116 min",
+    "genres": [
+      "Adventure",
+      "Comedy",
+      "Sci-Fi"
+    ],
+    "synopsis": "Marty McFly, a 17-year-old high school student, is accidentally sent thirty years into the past in a time-traveling DeLorean invented by his close friend.",
+    "streaming": [
+      "Peacock",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZmU0M2Y1OGUtZjIxNi00ZjBkLTg1MjgtOWIyNThiZWIwYjRiXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Michael J. Fox",
+        "role": ""
+      },
+      {
+        "name": "Christopher Lloyd",
+        "role": ""
+      },
+      {
+        "name": "Lea Thompson",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "title": "Spirited Away",
+    "year": 2001,
+    "rating": 8.5,
+    "runtime": "125 min",
+    "genres": [
+      "Animation",
+      "Adventure",
+      "Family"
+    ],
+    "synopsis": "During her family's move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits, and where humans are changed into beasts.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMjlmZmI5MDctNDE2YS00YWE0LWE5ZWItZDBhYWQ0NTcxNTEhXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Daveigh Chase",
+        "role": ""
+      },
+      {
+        "name": "Suzanne Pleshette",
+        "role": ""
+      },
+      {
+        "name": "Miyu Irino",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "title": "The Pianist",
+    "year": 2002,
+    "rating": 8.5,
+    "runtime": "150 min",
+    "genres": [
+      "Biography",
+      "Drama",
+      "Music"
+    ],
+    "synopsis": "A Polish Jewish musician struggles to survive the destruction of the Warsaw ghetto of World War II.",
+    "streaming": [
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BOWRiZDIxZjktMTA1NC00MDQ2LWEzMjUtMTliZmY3NjQ5ODZkXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Adrien Brody",
+        "role": ""
+      },
+      {
+        "name": "Thomas Kretschmann",
+        "role": ""
+      },
+      {
+        "name": "Frank Finlay",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "title": "Psycho",
+    "year": 1960,
+    "rating": 8.5,
+    "runtime": "109 min",
+    "genres": [
+      "Horror",
+      "Mystery",
+      "Thriller"
+    ],
+    "synopsis": "A Phoenix secretary embezzles $40,000 from her employer's client, goes on the run, and checks into a remote motel run by a young man under the domination of his mother.",
+    "streaming": [
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNTQwNDM1YzItNDAxZC00NWY2LTk0M2UtNDIwNWI5OGUyNWUxXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Anthony Perkins",
+        "role": ""
+      },
+      {
+        "name": "Janet Leigh",
+        "role": ""
+      },
+      {
+        "name": "Vera Miles",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "title": "Parasite",
+    "year": 2019,
+    "rating": 8.5,
+    "runtime": "132 min",
+    "genres": [
+      "Drama",
+      "Thriller"
+    ],
+    "synopsis": "Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.",
+    "streaming": [
+      "Max",
+      "Hulu"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Song Kang-ho",
+        "role": ""
+      },
+      {
+        "name": "Lee Sun-kyun",
+        "role": ""
+      },
+      {
+        "name": "Cho Yeo-jeong",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "title": "L\u00e9on: The Professional",
+    "year": 1994,
+    "rating": 8.5,
+    "runtime": "110 min",
+    "genres": [
+      "Action",
+      "Crime",
+      "Drama"
+    ],
+    "synopsis": "12-year-old Mathilda is reluctantly taken in by L\u00e9on, a professional assassin, after her family is murdered. An unusual relationship forms as she becomes his prot\u00e9g\u00e9e.",
+    "streaming": [
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BODllNWE0MmEtYjUwZi00ZjY3LThmNmQtZjZlMjI2YTZjYmQ0XkEyXkFqcGdeQXVyNTc1NTQxODI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Jean Reno",
+        "role": ""
+      },
+      {
+        "name": "Gary Oldman",
+        "role": ""
+      },
+      {
+        "name": "Natalie Portman",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 36,
+    "title": "Gladiator",
+    "year": 2000,
+    "rating": 8.5,
+    "runtime": "155 min",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Drama"
+    ],
+    "synopsis": "A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family and sent him into slavery.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMDliMmNhNDEtODUyOS00MjNlLTgxODItNTNjYTY2ZGJiNjY0XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Russell Crowe",
+        "role": ""
+      },
+      {
+        "name": "Joaquin Phoenix",
+        "role": ""
+      },
+      {
+        "name": "Connie Nielsen",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "title": "The Lion King",
+    "year": 1994,
+    "rating": 8.5,
+    "runtime": "88 min",
+    "genres": [
+      "Animation",
+      "Adventure",
+      "Drama"
+    ],
+    "synopsis": "Lion prince Simba and his father are targeted by his bitter uncle, who wants to ascend the throne himself.",
+    "streaming": [
+      "Disney+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BYTYxNGMyZTYtMjE3MS00MzNjLWFjNmYtMDk3N2FmM2JiM2M1XkEyXkFqcGdeQXVyNjY5NDU4NzI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Matthew Broderick",
+        "role": ""
+      },
+      {
+        "name": "Jeremy Irons",
+        "role": ""
+      },
+      {
+        "name": "James Earl Jones",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 38,
+    "title": "American History X",
+    "year": 1998,
+    "rating": 8.5,
+    "runtime": "119 min",
+    "genres": [
+      "Drama"
+    ],
+    "synopsis": "A former neo-nazi skinhead tries to prevent his younger brother from going down the same wrong path that he did.",
+    "streaming": [
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZTJhN2FkYWEtMGI0My00YWM4LWI2MzFlZDhlNDFhZDliYTc@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Edward Norton",
+        "role": ""
+      },
+      {
+        "name": "Edward Furlong",
+        "role": ""
+      },
+      {
+        "name": "Beverly D'Angelo",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 39,
+    "title": "The Departed",
+    "year": 2006,
+    "rating": 8.5,
+    "runtime": "151 min",
+    "genres": [
+      "Crime",
+      "Drama",
+      "Thriller"
+    ],
+    "synopsis": "An undercover cop and a mole in the police attempt to identify each other while infiltrating an Irish gang in South Boston.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTI1MTY2NzIzNV5BMl5BanBnXkFtZTcwMzY5Njc3MQ@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Leonardo DiCaprio",
+        "role": ""
+      },
+      {
+        "name": "Matt Damon",
+        "role": ""
+      },
+      {
+        "name": "Jack Nicholson",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 40,
+    "title": "Whiplash",
+    "year": 2014,
+    "rating": 8.5,
+    "runtime": "106 min",
+    "genres": [
+      "Drama",
+      "Music"
+    ],
+    "synopsis": "A promising young drummer enrolls at a cut-throat music conservatory where his dreams of greatness are mentored by an instructor who will stop at nothing to realize a student's potential.",
+    "streaming": [
+      "Hulu",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BOTA5NDZlZGUtNDVrNC00MTUwWE1YWAtMGUwNjFlNTNjYzA@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Miles Teller",
+        "role": ""
+      },
+      {
+        "name": "J.K. Simmons",
+        "role": ""
+      },
+      {
+        "name": "Melissa Benoist",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 41,
+    "title": "The Prestige",
+    "year": 2006,
+    "rating": 8.5,
+    "runtime": "130 min",
+    "genres": [
+      "Drama",
+      "Mystery",
+      "Sci-Fi"
+    ],
+    "synopsis": "After a tragic accident, two stage magicians in 1890s London engage in a battle to create the ultimate illusion while sacrificing everything they have to outwit each other.",
+    "streaming": [
+      "Prime Video",
+      "Apple TV"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMjA4NDI0MTIxNV5BMl5BanBnXkFtZTYwNTM0MzY2._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Christian Bale",
+        "role": ""
+      },
+      {
+        "name": "Hugh Jackman",
+        "role": ""
+      },
+      {
+        "name": "Scarlett Johansson",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 42,
+    "title": "The Usual Suspects",
+    "year": 1995,
+    "rating": 8.5,
+    "runtime": "106 min",
+    "genres": [
+      "Crime",
+      "Mystery",
+      "Thriller"
+    ],
+    "synopsis": "A sole survivor tells of the twisty events leading up to a horrific gun battle on a boat, which began when five criminals met at a seemingly random police lineup.",
+    "streaming": [
+      "Prime Video",
+      "MGM+"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BYTViNjMyNmUtNDFkNC00ZDRlLThmMDUtZDU2YWE4NGI2ZjVmXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Kevin Spacey",
+        "role": ""
+      },
+      {
+        "name": "Gabriel Byrne",
+        "role": ""
+      },
+      {
+        "name": "Chazz Palminteri",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 43,
+    "title": "Grave of the Fireflies",
+    "year": 1988,
+    "rating": 8.5,
+    "runtime": "89 min",
+    "genres": [
+      "Animation",
+      "Drama",
+      "War"
+    ],
+    "synopsis": "A young boy and his little sister struggle to survive in Japan during World War II.",
+    "streaming": [
+      "Prime Video",
+      "Apple TV"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZmY2NjUzNDQtNTgxNC00M2Q4LTljOWQtMjNjNDAwZjUwNDUzXkEyXkFqcGdeQXVyNTA4NzY1MzY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Tsutomu Tatsumi",
+        "role": ""
+      },
+      {
+        "name": "Ayano Shiraishi",
+        "role": ""
+      },
+      {
+        "name": "Akemi Yamaguchi",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 44,
+    "title": "Harakiri",
+    "year": 1962,
+    "rating": 8.6,
+    "runtime": "133 min",
+    "genres": [
+      "Action",
+      "Drama",
+      "Mystery"
+    ],
+    "synopsis": "When a ronin requesting seppuku at a feudal lord's palace is told of the brutal suicide of another ronin who called there previously, he reveals how their pasts are intertwined.",
+    "streaming": [
+      "Criterion Channel"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BYjBmYTQ1NjItZWU5MS00YjI0LTg2OTYtYmFkN2JkYjFiNTZkXkEyXkFqcGdeQXVyMTMxMTY0OTQ@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Tatsuya Nakadai",
+        "role": ""
+      },
+      {
+        "name": "Akira Ishihama",
+        "role": ""
+      },
+      {
+        "name": "Shima Iwashita",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 45,
+    "title": "Casablanca",
+    "year": 1942,
+    "rating": 8.5,
+    "runtime": "102 min",
+    "genres": [
+      "Drama",
+      "Romance",
+      "War"
+    ],
+    "synopsis": "A cynical expatriate American cafe owner struggles to decide whether or not to help his former lover and her fugitive husband escape the Nazis in French Morocco.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BY2IzZGY2YmEtYzljNS00NTM5LTgwMzUtMzM1NjQ4NGI0OTk0XkEyXkFqcGdeQXVyNDYyMDk5MTU@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Humphrey Bogart",
+        "role": ""
+      },
+      {
+        "name": "Ingrid Bergman",
+        "role": ""
+      },
+      {
+        "name": "Paul Henreid",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 46,
+    "title": "Cinema Paradiso",
+    "year": 1988,
+    "rating": 8.5,
+    "runtime": "155 min",
+    "genres": [
+      "Drama",
+      "Romance"
+    ],
+    "synopsis": "A filmmaker recalls his childhood when falling in love with the pictures at the cinema of his home village and forms a deep friendship with the cinema's projectionist.",
+    "streaming": [
+      "Prime Video",
+      "Max"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BM2FhYjEyYmYtMDI1Yy00YTcyLWI1ZWEtZTlhOWQ3NDFkOTkzXkEyXkFqcGdeQXVyMTAxNzQ1NzI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Philippe Noiret",
+        "role": ""
+      },
+      {
+        "name": "Enzo Cannavale",
+        "role": ""
+      },
+      {
+        "name": "Antonella Attili",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 47,
+    "title": "Rear Window",
+    "year": 1954,
+    "rating": 8.5,
+    "runtime": "112 min",
+    "genres": [
+      "Mystery",
+      "Thriller"
+    ],
+    "synopsis": "A wheelchair-bound photographer spies on his neighbors from his Greenwich Village courtyard apartment window, and becomes convinced one of them has committed murder.",
+    "streaming": [
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNGUxYWM3M2MtMGM3Mi00ZmRiLWE0NGQtZjE5ODI2OTJhNTU0XkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "James Stewart",
+        "role": ""
+      },
+      {
+        "name": "Grace Kelly",
+        "role": ""
+      },
+      {
+        "name": "Wendell Corey",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 48,
+    "title": "Alien",
+    "year": 1979,
+    "rating": 8.5,
+    "runtime": "117 min",
+    "genres": [
+      "Horror",
+      "Sci-Fi"
+    ],
+    "synopsis": "The crew of a commercial spacecraft encounter a deadly lifeform after investigating an unknown transmission.",
+    "streaming": [
+      "Hulu",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BOGQzZTBjMjQtOTVmMS00NGE5LWEyYmMtOGQ1ZGZjNmRkYjFhXkEyXkFqcGdeQXVyMjUzOTY1NTc@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Sigourney Weaver",
+        "role": ""
+      },
+      {
+        "name": "Tom Skerritt",
+        "role": ""
+      },
+      {
+        "name": "John Hurt",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 49,
+    "title": "Modern Times",
+    "year": 1936,
+    "rating": 8.5,
+    "runtime": "87 min",
+    "genres": [
+      "Comedy",
+      "Drama",
+      "Romance"
+    ],
+    "synopsis": "The Tramp struggles to live in modern industrial society with the help of a young homeless woman.",
+    "streaming": [
+      "Max",
+      "Criterion Channel"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BYjJiZjMzYzktNjU0NS00OTIxLWE1NWItNjUzZTUxMzZhY2VlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Charles Chaplin",
+        "role": ""
+      },
+      {
+        "name": "Paulette Goddard",
+        "role": ""
+      },
+      {
+        "name": "Henry Bergman",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 50,
+    "title": "City Lights",
+    "year": 1931,
+    "rating": 8.5,
+    "runtime": "87 min",
+    "genres": [
+      "Comedy",
+      "Drama",
+      "Romance"
+    ],
+    "synopsis": "With the aid of a wealthy erratic tippler, a dewy-eyed tramp who has fallen in love with a sightless flower girl accumulates money to be able to help her medically.",
+    "streaming": [
+      "Max",
+      "Criterion Channel"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BY2I4MmM1N2EtM2YzOS00OWUzLTkzYzctNDc5NDg2N2IyODJmXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Charles Chaplin",
+        "role": ""
+      },
+      {
+        "name": "Virginia Cherrill",
+        "role": ""
+      },
+      {
+        "name": "Florence Lee",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 51,
+    "title": "Apocalypse Now",
+    "year": 1979,
+    "rating": 8.4,
+    "runtime": "147 min",
+    "genres": [
+      "Drama",
+      "Mystery",
+      "War"
+    ],
+    "synopsis": "A U.S. Army officer serving in Vietnam is tasked with assassinating a renegade Special Forces Colonel who sees himself as a god.",
+    "streaming": [
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMDdhODg0MjYtYzBiOS00ZmI5LWEwZGYtZTEyMzFiNDg2OTUxXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Martin Sheen",
+        "role": ""
+      },
+      {
+        "name": "Marlon Brando",
+        "role": ""
+      },
+      {
+        "name": "Robert Duvall",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 52,
+    "title": "Memento",
+    "year": 2000,
+    "rating": 8.4,
+    "runtime": "113 min",
+    "genres": [
+      "Mystery",
+      "Thriller"
+    ],
+    "synopsis": "A man with short-term memory loss attempts to track down his wife's murderer.",
+    "streaming": [
+      "Prime Video",
+      "Tubi"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZTcyNjk1MjgtOWI3Mi00YzQwLWI5MTktMzY4ZmI2NDAyNzYzXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Guy Pearce",
+        "role": ""
+      },
+      {
+        "name": "Carrie-Anne Moss",
+        "role": ""
+      },
+      {
+        "name": "Joe Pantoliano",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 53,
+    "title": "Django Unchained",
+    "year": 2012,
+    "rating": 8.4,
+    "runtime": "165 min",
+    "genres": [
+      "Drama",
+      "Western"
+    ],
+    "synopsis": "With the help of a German bounty-hunter, a freed slave sets out to rescue his wife from a brutal plantation owner in Mississippi.",
+    "streaming": [
+      "Prime Video",
+      "Apple TV"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMjIyNTQ5NjQ1OV5BMl5BanBnXkFtZTcwODg1MDU4OA@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Jamie Foxx",
+        "role": ""
+      },
+      {
+        "name": "Christoph Waltz",
+        "role": ""
+      },
+      {
+        "name": "Leonardo DiCaprio",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 54,
+    "title": "Indiana Jones and the Raiders of the Lost Ark",
+    "year": 1981,
+    "rating": 8.4,
+    "runtime": "115 min",
+    "genres": [
+      "Action",
+      "Adventure"
+    ],
+    "synopsis": "In 1936, archaeologist and adventurer Indiana Jones is hired by the U.S. government to find the Ark of the Covenant before Adolf Hitler's Nazis can obtain its awesome powers.",
+    "streaming": [
+      "Disney+",
+      "Paramount+"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMjA0ODEzMTc1Nl5BMl5BanBnXkFtZTcwMDg2NTg5OA@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Harrison Ford",
+        "role": ""
+      },
+      {
+        "name": "Karen Allen",
+        "role": ""
+      },
+      {
+        "name": "Paul Freeman",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 55,
+    "title": "WALL\u00b7E",
+    "year": 2008,
+    "rating": 8.4,
+    "runtime": "98 min",
+    "genres": [
+      "Animation",
+      "Adventure",
+      "Family"
+    ],
+    "synopsis": "In the distant future, a small waste-collecting robot inadvertently embarks on a space journey that will ultimately decide the fate of mankind.",
+    "streaming": [
+      "Disney+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMjExMTg5OTU0NF5BMl5BanBnXkFtZTcwMjMxMzMzMw@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Ben Burtt",
+        "role": ""
+      },
+      {
+        "name": "Elissa Knight",
+        "role": ""
+      },
+      {
+        "name": "Jeff Garlin",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 56,
+    "title": "The Lives of Others",
+    "year": 2006,
+    "rating": 8.4,
+    "runtime": "137 min",
+    "genres": [
+      "Drama",
+      "Mystery",
+      "Thriller"
+    ],
+    "synopsis": "In 1984 East Berlin, an agent of the secret police, conducting surveillance on a writer and his lover, finds himself becoming increasingly absorbed by their lives.",
+    "streaming": [
+      "Prime Video",
+      "Apple TV"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNmQyNmJjM2ItNTQzYi00YjgwLWEzOWItMGEyMWU5MjMyZGRjXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Ulrich M\u00fche",
+        "role": ""
+      },
+      {
+        "name": "Martina Gedeck",
+        "role": ""
+      },
+      {
+        "name": "Sebastian Koch",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 57,
+    "title": "Sunset Blvd.",
+    "year": 1950,
+    "rating": 8.4,
+    "runtime": "110 min",
+    "genres": [
+      "Drama",
+      "Film-Noir"
+    ],
+    "synopsis": "A screenwriter develops a dangerous relationship with a faded film star determined to make a triumphant return.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTc3NDUzODcxNV5BMl5BanBnXkFtZTgwMjIyOTIwMjE@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "William Holden",
+        "role": ""
+      },
+      {
+        "name": "Gloria Swanson",
+        "role": ""
+      },
+      {
+        "name": "Erich von Stroheim",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 58,
+    "title": "Paths of Glory",
+    "year": 1957,
+    "rating": 8.4,
+    "runtime": "88 min",
+    "genres": [
+      "Drama",
+      "War"
+    ],
+    "synopsis": "After refusing to attack an enemy position, a general accuses the soldiers of cowardice and their commanding officer must defend them.",
+    "streaming": [
+      "Prime Video",
+      "MGM+"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNjViMmRkOTEtM2ViOS00ODg0LWJhYWEtNTBlOGQxNDczOGY3XkEyXkFqcGdeQXVyMDI2NDg0NQ@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Kirk Douglas",
+        "role": ""
+      },
+      {
+        "name": "Ralph Meeker",
+        "role": ""
+      },
+      {
+        "name": "Adolphe Menjou",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 59,
+    "title": "The Shining",
+    "year": 1980,
+    "rating": 8.4,
+    "runtime": "146 min",
+    "genres": [
+      "Drama",
+      "Horror"
+    ],
+    "synopsis": "A family heads to an isolated hotel for the winter where a sinister presence influences the father into violence, while his psychic son sees horrific forebodings from both past and future.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZWFlYmY2MWEtM2UzZi00ZTk5LWE2NTctYThiZmVhNWNjMzdjXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Jack Nicholson",
+        "role": ""
+      },
+      {
+        "name": "Shelley Duvall",
+        "role": ""
+      },
+      {
+        "name": "Danny Lloyd",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 60,
+    "title": "The Great Dictator",
+    "year": 1940,
+    "rating": 8.4,
+    "runtime": "125 min",
+    "genres": [
+      "Comedy",
+      "Drama",
+      "War"
+    ],
+    "synopsis": "Dictator Adenoid Hynkel tries to expand his empire while a poor Jewish barber tries to avoid persecution from Hynkel's regime.",
+    "streaming": [
+      "Max",
+      "Criterion Channel"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMmExYWJjNTktNGUyZS00ODhmLTkxNDAtNWIzZTA2MDUxM2Q3XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Charles Chaplin",
+        "role": ""
+      },
+      {
+        "name": "Paulette Goddard",
+        "role": ""
+      },
+      {
+        "name": "Jack Oakie",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 61,
+    "title": "Avengers: Infinity War",
+    "year": 2018,
+    "rating": 8.4,
+    "runtime": "149 min",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Sci-Fi"
+    ],
+    "synopsis": "The Avengers and their allies must be willing to sacrifice all in an attempt to defeat the powerful Thanos before his blitz of devastation and ruin puts an end to the universe.",
+    "streaming": [
+      "Disney+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMjMxNjY2MDU1OV5BMl5BanBnXkFtZTgwNzY1MTUwNTM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Robert Downey Jr.",
+        "role": ""
+      },
+      {
+        "name": "Chris Hemsworth",
+        "role": ""
+      },
+      {
+        "name": "Mark Ruffalo",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 62,
+    "title": "Spider-Man: Into the Spider-Verse",
+    "year": 2018,
+    "rating": 8.4,
+    "runtime": "117 min",
+    "genres": [
+      "Animation",
+      "Action",
+      "Adventure"
+    ],
+    "synopsis": "Teen Miles Morales becomes the Spider-Man of his universe, and must join with five spider-powered individuals from other dimensions to stop a threat for all realities.",
+    "streaming": [
+      "Hulu",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMjMwNDkxMTgzOF5BMl5BanBnXkFtZTgwNTkwNTQ3NjM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Shameik Moore",
+        "role": ""
+      },
+      {
+        "name": "Jake Johnson",
+        "role": ""
+      },
+      {
+        "name": "Hailee Steinfeld",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 63,
+    "title": "Witness for the Prosecution",
+    "year": 1957,
+    "rating": 8.4,
+    "runtime": "116 min",
+    "genres": [
+      "Crime",
+      "Drama",
+      "Mystery"
+    ],
+    "synopsis": "A veteran British barrister must defend his client in a murder trial that has surprise after surprise.",
+    "streaming": [
+      "Prime Video",
+      "MGM+"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNDQwODU5OWYtNDcyNi00MDQ1LThiOGMtZDgwNWJiM2JkNjNjXkEyXkFqcGdeQXVyMDI2NDg0NQ@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Tyrone Power",
+        "role": ""
+      },
+      {
+        "name": "Marlene Dietrich",
+        "role": ""
+      },
+      {
+        "name": "Charles Laughton",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 64,
+    "title": "Aliens",
+    "year": 1986,
+    "rating": 8.4,
+    "runtime": "137 min",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Sci-Fi"
+    ],
+    "synopsis": "Fifty-seven years after surviving an apocalyptic attack aboard her space vessel by merciless space creatures, Officer Ripley awakens from hyper-sleep and tries to warn anyone who will listen about the predators.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BOGJkY2EyOWYtYWRmNy00ZTEzLTllNDYtYWZiNWZlZmI0YTgwXkEyXkFqcGdeQXVyMTUzMDUzNTI3._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Sigourney Weaver",
+        "role": ""
+      },
+      {
+        "name": "Michael Biehn",
+        "role": ""
+      },
+      {
+        "name": "Carrie Henn",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 65,
+    "title": "Spider-Man: Across the Spider-Verse",
+    "year": 2023,
+    "rating": 8.6,
+    "runtime": "140 min",
+    "genres": [
+      "Animation",
+      "Action",
+      "Adventure"
+    ],
+    "synopsis": "Miles Morales catapults across the Multiverse, where he encounters a team of Spider-People charged with protecting its very existence.",
+    "streaming": [
+      "Netflix",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMzI0NmVkMjEtYmY4MS00ZWEzLWEzM2ItYTRmN2U1YTk3ZTYwXkEyXkFqcGdeQXVyODIwMDI1NjM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Shameik Moore",
+        "role": ""
+      },
+      {
+        "name": "Hailee Steinfeld",
+        "role": ""
+      },
+      {
+        "name": "Brian Tyree Henry",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 66,
+    "title": "The Dark Knight Rises",
+    "year": 2012,
+    "rating": 8.4,
+    "runtime": "164 min",
+    "genres": [
+      "Action",
+      "Drama",
+      "Thriller"
+    ],
+    "synopsis": "Eight years after the Joker's reign of anarchy, Batman, with the help of the enigmatic Catwoman, is forced from his exile to save Gotham City from the brutal guerrilla terrorist Bane.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTk4ODQzNDY3Ml5BMl5BanBnXkFtZTcwODA0NTM4Nw@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Christian Bale",
+        "role": ""
+      },
+      {
+        "name": "Tom Hardy",
+        "role": ""
+      },
+      {
+        "name": "Anne Hathaway",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 67,
+    "title": "American Beauty",
+    "year": 1999,
+    "rating": 8.3,
+    "runtime": "122 min",
+    "genres": [
+      "Drama"
+    ],
+    "synopsis": "A sexually frustrated suburban father has a mid-life crisis after becoming infatuated with his daughter's best friend.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNTBmZWJkNjYtNDBkMi00YWUzLWE2ZTItOWZhMjNlOThjZTNmXkEyXkFqcGdeQXVyNDk3NzU2MTQ@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Kevin Spacey",
+        "role": ""
+      },
+      {
+        "name": "Annette Bening",
+        "role": ""
+      },
+      {
+        "name": "Thora Birch",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 68,
+    "title": "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
+    "year": 1964,
+    "rating": 8.3,
+    "runtime": "95 min",
+    "genres": [
+      "Comedy",
+      "War"
+    ],
+    "synopsis": "An unhinged American general orders a bombing run on the Soviet Union, triggering a path to nuclear holocaust that a war room full of politicians and generals frantically tries to stop.",
+    "streaming": [
+      "Prime Video",
+      "Apple TV"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZWI3ZTMxNjctMjdlMC00Zjg3LWhhN2MtMzg1ZTMyNjY1NTFiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Peter Sellers",
+        "role": ""
+      },
+      {
+        "name": "George C. Scott",
+        "role": ""
+      },
+      {
+        "name": "Sterling Hayden",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 69,
+    "title": "Inglourious Basterds",
+    "year": 2009,
+    "rating": 8.4,
+    "runtime": "153 min",
+    "genres": [
+      "Adventure",
+      "Drama",
+      "War"
+    ],
+    "synopsis": "In Nazi-occupied France during World War II, a plan to assassinate Nazi leaders by a group of Jewish U.S. soldiers coincides with a theatre owner's vengeful plans for the same.",
+    "streaming": [
+      "Prime Video",
+      "Apple TV"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BOTJiNDEzOWYtMTVjOC00ZjlmLWE0NGMtZmE1YTNhNmNlYWVhXkEyXkFqcGdeQXVyNTIzOTk5ODM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Brad Pitt",
+        "role": ""
+      },
+      {
+        "name": "Diane Kruger",
+        "role": ""
+      },
+      {
+        "name": "Eli Roth",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 70,
+    "title": "Oldboy",
+    "year": 2003,
+    "rating": 8.4,
+    "runtime": "120 min",
+    "genres": [
+      "Action",
+      "Drama",
+      "Mystery"
+    ],
+    "synopsis": "After being kidnapped and imprisoned for fifteen years, Oh Dae-Su is released, only to find that he must find his captor in five days.",
+    "streaming": [
+      "Hulu",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTI3NTQyMzU5M15BMl5BanBnXkFtZTcwMTM2MjgyMQ@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Choi Min-sik",
+        "role": ""
+      },
+      {
+        "name": "Yoo Ji-tae",
+        "role": ""
+      },
+      {
+        "name": "Kang Hye-jeong",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 71,
+    "title": "Amadeus",
+    "year": 1984,
+    "rating": 8.4,
+    "runtime": "160 min",
+    "genres": [
+      "Biography",
+      "Drama",
+      "Music"
+    ],
+    "synopsis": "The life, success and troubles of Wolfgang Amadeus Mozart, as told by Antonio Salieri, the contemporaneous composer who was insanely jealous of Mozart's talent and claimed to have murdered him.",
+    "streaming": [
+      "Prime Video",
+      "Apple TV"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNWJlNzUzNGMtYTAwZi00ZWQxLTExNDItYmViZGZhNjUxNDZhXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "F. Murray Abraham",
+        "role": ""
+      },
+      {
+        "name": "Tom Hulce",
+        "role": ""
+      },
+      {
+        "name": "Elizabeth Berridge",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 72,
+    "title": "Toy Story",
+    "year": 1995,
+    "rating": 8.3,
+    "runtime": "81 min",
+    "genres": [
+      "Animation",
+      "Adventure",
+      "Comedy"
+    ],
+    "synopsis": "A cowboy doll is profoundly threatened and jealous when a new spaceman action figure supplants him as top toy in a boy's bedroom.",
+    "streaming": [
+      "Disney+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMDU2ZWJlMjktMTRhMy00ZTA5LWEzNDgtYmNmZTEwZTViZWJkXkEyXkFqcGdeQXVyNDQ2OTk4MzI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Tom Hanks",
+        "role": ""
+      },
+      {
+        "name": "Tim Allen",
+        "role": ""
+      },
+      {
+        "name": "Don Rickles",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 73,
+    "title": "Coco",
+    "year": 2017,
+    "rating": 8.4,
+    "runtime": "105 min",
+    "genres": [
+      "Animation",
+      "Adventure",
+      "Comedy"
+    ],
+    "synopsis": "Aspiring musician Miguel, confronted with his family's ancestral ban on music, enters the Land of the Dead to find his great-great-grandfather, a legendary singer.",
+    "streaming": [
+      "Disney+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BYjQ5NjM0Y2YtNjZkNC00ZDhkLWJjMWItN2QyNzFkMDE3ZjAxXkEyXkFqcGdeQXVyODIxMDIyMTQ@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Anthony Gonzalez",
+        "role": ""
+      },
+      {
+        "name": "Gael Garc\u00eda Bernal",
+        "role": ""
+      },
+      {
+        "name": "Benjamin Bratt",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 74,
+    "title": "Braveheart",
+    "year": 1995,
+    "rating": 8.3,
+    "runtime": "178 min",
+    "genres": [
+      "Biography",
+      "Drama",
+      "History"
+    ],
+    "synopsis": "Scottish warrior William Wallace leads his countrymen in a rebellion to free his homeland from the tyranny of King Edward I of England.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMzkzMmU0YTYtOWM3My00YzBmLWI0YzctYjk3Zjg3ODhlNDUzXkEyXkFqcGdeQXVyNDUyOTg3Njg@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Mel Gibson",
+        "role": ""
+      },
+      {
+        "name": "Sophie Marceau",
+        "role": ""
+      },
+      {
+        "name": "Patrick McGoohan",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 75,
+    "title": "Joker",
+    "year": 2019,
+    "rating": 8.4,
+    "runtime": "122 min",
+    "genres": [
+      "Crime",
+      "Drama",
+      "Thriller"
+    ],
+    "synopsis": "In Gotham City, mentally troubled comedian Arthur Fleck is disregarded and mistreated by society. He then embarks on a downward spiral of revolution and bloody crime.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNGVjNWI4ZGUtNzE0MS00YTJmLWE0ZDctN2ZiYTk2YmI3NTYyXkEyXkFqcGdeQXVyMTkxNjUyNQ@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Joaquin Phoenix",
+        "role": ""
+      },
+      {
+        "name": "Robert De Niro",
+        "role": ""
+      },
+      {
+        "name": "Zazie Beetz",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 76,
+    "title": "Das Boot",
+    "year": 1981,
+    "rating": 8.3,
+    "runtime": "149 min",
+    "genres": [
+      "Drama",
+      "War"
+    ],
+    "synopsis": "The claustrophobic world of a WWII German U-boat; boredom, filth and sheer terror.",
+    "streaming": [
+      "Prime Video",
+      "Apple TV"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNDBjMWUxNTItNjhiNC00YzFlLWEwNWMtZDAwNjM1ZDFhZDgyXkEyXkFqcGdeQXVyNDYyMDk5MTU@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "J\u00fcrgen Prochnow",
+        "role": ""
+      },
+      {
+        "name": "Herbert Gr\u00f6nemeyer",
+        "role": ""
+      },
+      {
+        "name": "Klaus Wennemann",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 77,
+    "title": "Avengers: Endgame",
+    "year": 2019,
+    "rating": 8.4,
+    "runtime": "181 min",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Drama"
+    ],
+    "synopsis": "After the devastating events of Infinity War, the Avengers assemble once more in order to reverse Thanos' actions and restore balance to the universe.",
+    "streaming": [
+      "Disney+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Robert Downey Jr.",
+        "role": ""
+      },
+      {
+        "name": "Chris Evans",
+        "role": ""
+      },
+      {
+        "name": "Mark Ruffalo",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 78,
+    "title": "Princess Mononoke",
+    "year": 1997,
+    "rating": 8.3,
+    "runtime": "134 min",
+    "genres": [
+      "Animation",
+      "Action",
+      "Adventure"
+    ],
+    "synopsis": "On a journey to find the cure for a Tatarigami's curse, Ashitaka finds himself in the middle of a war between the forest gods and Tatara, a mining colony.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNGIzY2IzODQtNjc2MS00YWE1LWEyM2ItYWU1NjQwOWEzZTJhXkEyXkFqcGdeQXVyNDk3NzU2MTQ@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Y\u00f4ji Matsuda",
+        "role": ""
+      },
+      {
+        "name": "Yuriko Ishida",
+        "role": ""
+      },
+      {
+        "name": "Y\u00fbko Tanaka",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 79,
+    "title": "Good Will Hunting",
+    "year": 1997,
+    "rating": 8.3,
+    "runtime": "126 min",
+    "genres": [
+      "Drama",
+      "Romance"
+    ],
+    "synopsis": "Will Hunting, a janitor at M.I.T., has a gift for mathematics, but needs help from a psychologist to find direction in his life.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BOTI0MzcxMTYtZDVkMy00NjY1LTgyMTYtZmUxN2M3NmQ2NWJhXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Robin Williams",
+        "role": ""
+      },
+      {
+        "name": "Matt Damon",
+        "role": ""
+      },
+      {
+        "name": "Ben Affleck",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 80,
+    "title": "Once Upon a Time in America",
+    "year": 1984,
+    "rating": 8.3,
+    "runtime": "229 min",
+    "genres": [
+      "Crime",
+      "Drama"
+    ],
+    "synopsis": "A former Prohibition-era Jewish gangster returns to the Lower East Side of Manhattan over thirty years later, where he once again must confront the ghosts and regrets of his old life.",
+    "streaming": [
+      "Hulu",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMGFkNWI4MTMtNGQ0OC00ZWQ1LThiMWMtMzYxMWI2YjVjZjk2XkEyXkFqcGdeQXVyNjc1NTYyMjg@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Robert De Niro",
+        "role": ""
+      },
+      {
+        "name": "James Woods",
+        "role": ""
+      },
+      {
+        "name": "Elizabeth McGovern",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 81,
+    "title": "Star Wars: Episode VI - Return of the Jedi",
+    "year": 1983,
+    "rating": 8.3,
+    "runtime": "131 min",
+    "genres": [
+      "Action",
+      "Adventure",
+      "Fantasy"
+    ],
+    "synopsis": "After rescuing Han Solo from Jabba the Hutt, the Rebels attempt to destroy the second Death Star, while Luke struggles to help Darth Vader back from the dark side.",
+    "streaming": [
+      "Disney+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BOWZlNDNcZTgwMzgtYjE2NC00ZjlkLWFlNWItMzBkMDIzY2JlMTJkXkEyXkFqcGdeQXVyMjUzOTY1NTc@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Mark Hamill",
+        "role": ""
+      },
+      {
+        "name": "Harrison Ford",
+        "role": ""
+      },
+      {
+        "name": "Carrie Fisher",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 82,
+    "title": "Reservoir Dogs",
+    "year": 1992,
+    "rating": 8.3,
+    "runtime": "99 min",
+    "genres": [
+      "Crime",
+      "Thriller"
+    ],
+    "synopsis": "When a simple jewelry heist goes horribly wrong, the surviving criminals begin to suspect that one of them is a police informant.",
+    "streaming": [
+      "Prime Video",
+      "Apple TV"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZmExNmEwYWItYmQzOS00YjA5LTk2MjktZjRoOWZkODgyZTU2XkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Harvey Keitel",
+        "role": ""
+      },
+      {
+        "name": "Tim Roth",
+        "role": ""
+      },
+      {
+        "name": "Michael Madsen",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 83,
+    "title": "2001: A Space Odyssey",
+    "year": 1968,
+    "rating": 8.3,
+    "runtime": "149 min",
+    "genres": [
+      "Adventure",
+      "Sci-Fi"
+    ],
+    "synopsis": "After uncovering a mysterious artifact buried beneath the Lunar surface, a spacecraft is sent to Jupiter to find its origins: a spacecraft manned by two men and the supercomputer HAL 9000.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMmNlYzRiNDctZWNhMi00MzI4LThkZTctMTUzZmFlZDA2ZTM4XkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Keir Dullea",
+        "role": ""
+      },
+      {
+        "name": "Gary Lockwood",
+        "role": ""
+      },
+      {
+        "name": "William Sylvester",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 84,
+    "title": "Requiem for a Dream",
+    "year": 2000,
+    "rating": 8.3,
+    "runtime": "102 min",
+    "genres": [
+      "Drama"
+    ],
+    "synopsis": "The drug-induced utopias of four Coney Island people are shattered when their addictions run deep.",
+    "streaming": [
+      "Tubi",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BOTdiNzJlOWUtNWMwNS00NmFlLWI0YTEtZmI3YjIzZWUyY2Y3XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Ellen Burstyn",
+        "role": ""
+      },
+      {
+        "name": "Jared Leto",
+        "role": ""
+      },
+      {
+        "name": "Jennifer Connelly",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 85,
+    "title": "Eternal Sunshine of the Spotless Mind",
+    "year": 2004,
+    "rating": 8.3,
+    "runtime": "108 min",
+    "genres": [
+      "Drama",
+      "Romance",
+      "Sci-Fi"
+    ],
+    "synopsis": "When their relationship turns sour, a couple undergoes a medical procedure to have each other erased from their memories.",
+    "streaming": [
+      "Peacock",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTY4NzcwODg3Nl5BMl5BanBnXkFtZTcwNTEwOTMyMw@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Jim Carrey",
+        "role": ""
+      },
+      {
+        "name": "Kate Winslet",
+        "role": ""
+      },
+      {
+        "name": "Tom Wilkinson",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 86,
+    "title": "Toy Story 3",
+    "year": 2010,
+    "rating": 8.3,
+    "runtime": "103 min",
+    "genres": [
+      "Animation",
+      "Adventure",
+      "Comedy"
+    ],
+    "synopsis": "The toys are mistakenly delivered to a day-care center instead of the attic right before Andy leaves for college, and it's up to Woody to convince the other toys that they weren't abandoned and to return home.",
+    "streaming": [
+      "Disney+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTgxOTY4Mjc0MF5BMl5BanBnXkFtZTcwNTA4MDQ5Mw@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Tom Hanks",
+        "role": ""
+      },
+      {
+        "name": "Tim Allen",
+        "role": ""
+      },
+      {
+        "name": "Joan Cusack",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 87,
+    "title": "A Clockwork Orange",
+    "year": 1971,
+    "rating": 8.3,
+    "runtime": "136 min",
+    "genres": [
+      "Crime",
+      "Sci-Fi"
+    ],
+    "synopsis": "In the future, a sadistic gang leader is imprisoned and volunteers for a conduct-aversion experiment, but it doesn't go as planned.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTY3MjM1Mzc4N15BMl5BanBnXkFtZTgwNDM4NjI5MTE@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Malcolm McDowell",
+        "role": ""
+      },
+      {
+        "name": "Patrick Magee",
+        "role": ""
+      },
+      {
+        "name": "Michael Bates",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 88,
+    "title": "Full Metal Jacket",
+    "year": 1987,
+    "rating": 8.3,
+    "runtime": "116 min",
+    "genres": [
+      "Drama",
+      "War"
+    ],
+    "synopsis": "A pragmatic U.S. Marine observes the dehumanizing effects the Vietnam War has on his fellow recruits from their brutal boot camp training to the bloody street fighting in Hue.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNzkxODk0NjEtYjc4Mi00ZDI0LTgyYjEtYjc1NDcxNDJhZjg1XkEyXkFqcGdeQXVyNDYyMDk5MTU@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Matthew Modine",
+        "role": ""
+      },
+      {
+        "name": "R. Lee Ermey",
+        "role": ""
+      },
+      {
+        "name": "Vincent D'Onofrio",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 89,
+    "title": "Bicycle Thieves",
+    "year": 1948,
+    "rating": 8.3,
+    "runtime": "89 min",
+    "genres": [
+      "Drama"
+    ],
+    "synopsis": "In post-war Italy, a working-class man's bicycle is stolen, endangering his efforts to find work. He and his son set out to find it.",
+    "streaming": [
+      "Max",
+      "Criterion Channel"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNmI1ODBjNWItNDRhMi00OTVkLTliNTEtNDRhNzMyMzY2MTMzXkEyXkFqcGdeQXVyMDI2NDg0NQ@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Lamberto Maggiorani",
+        "role": ""
+      },
+      {
+        "name": "Enzo Staiola",
+        "role": ""
+      },
+      {
+        "name": "Lianella Carell",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 90,
+    "title": "Singin' in the Rain",
+    "year": 1952,
+    "rating": 8.3,
+    "runtime": "103 min",
+    "genres": [
+      "Comedy",
+      "Musical",
+      "Romance"
+    ],
+    "synopsis": "A silent film production company and cast make a difficult transition to sound.",
+    "streaming": [
+      "Max",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BZDRjNGViMjQtOThlMi00MTA3LThkYzQtNzVlNjY1MzdhOTE1XkEyXkFqcGdeQXVyNDYyMDk5MTU@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Gene Kelly",
+        "role": ""
+      },
+      {
+        "name": "Donald O'Connor",
+        "role": ""
+      },
+      {
+        "name": "Debbie Reynolds",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 91,
+    "title": "Metropolis",
+    "year": 1927,
+    "rating": 8.3,
+    "runtime": "153 min",
+    "genres": [
+      "Drama",
+      "Sci-Fi"
+    ],
+    "synopsis": "In a futuristic city sharply divided between the working class and the city planners, the son of the city's mastermind falls in love with a working-class prophet who predicts the coming of a savior.",
+    "streaming": [
+      "Kino Film Friday",
+      "Tubi"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BNDUyODAzNDI1Nl5BMl5BanBnXkFtZTcwODA2NDkzNw@@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Brigitte Helm",
+        "role": ""
+      },
+      {
+        "name": "Alfred Abel",
+        "role": ""
+      },
+      {
+        "name": "Gustav Fr\u00f6hlich",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 92,
+    "title": "Snatch",
+    "year": 2000,
+    "rating": 8.3,
+    "runtime": "104 min",
+    "genres": [
+      "Comedy",
+      "Crime"
+    ],
+    "synopsis": "Unscrupulous boxing promoters, violent bookmakers, a Russian gangster, incompetent amateur robbers and supposedly Jewish jewelers fight to track down a priceless stolen diamond.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTA2NDYxOGYtYjU1Mi00Y2QzLTgxMTMtMTQxMzAyNWE4ZjQxXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Jason Statham",
+        "role": ""
+      },
+      {
+        "name": "Brad Pitt",
+        "role": ""
+      },
+      {
+        "name": "Stephen Graham",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 93,
+    "title": "1917",
+    "year": 2019,
+    "rating": 8.2,
+    "runtime": "119 min",
+    "genres": [
+      "Action",
+      "Drama",
+      "War"
+    ],
+    "synopsis": "April 6th, 1917. As an infantry battalion assembles to wage war deep in enemy territory, two soldiers are assigned to race against time and deliver a message that will stop 1,600 men from walking straight into a deadly trap.",
+    "streaming": [
+      "Paramount+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BOTcwZTI5NTUtMzg2Yi00Zjc1LTg4YWQtZmExNzFkMzhhNjg4XkEyXkFqcGdeQXVyNjg2NjQwMDQ@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Dean-Charles Chapman",
+        "role": ""
+      },
+      {
+        "name": "George MacKay",
+        "role": ""
+      },
+      {
+        "name": "Daniel Mays",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 94,
+    "title": "Scarface",
+    "year": 1983,
+    "rating": 8.3,
+    "runtime": "170 min",
+    "genres": [
+      "Crime",
+      "Drama"
+    ],
+    "synopsis": "In 1980 Miami, a determined Cuban immigrant takes over a drug cartel and succumbs to greed.",
+    "streaming": [
+      "Hulu",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMjA1OTkyMTMtMTBlMi00YTQ1LWEyM2ItZmI2ODVkZWM3ZGUxXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Al Pacino",
+        "role": ""
+      },
+      {
+        "name": "Michelle Pfeiffer",
+        "role": ""
+      },
+      {
+        "name": "Steven Bauer",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 95,
+    "title": "Taxi Driver",
+    "year": 1976,
+    "rating": 8.2,
+    "runtime": "114 min",
+    "genres": [
+      "Crime",
+      "Drama"
+    ],
+    "synopsis": "A mentally unstable veteran works as a nighttime taxi driver in New York City, where the perceived decadence and sleaze fuels his urge for violent action.",
+    "streaming": [
+      "Prime Video",
+      "Apple TV"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BM2M1MmVhNDgtNmI0YS00ZDNmLTkyNjctNTJiYTQ2N2NmYzc2XkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Robert De Niro",
+        "role": ""
+      },
+      {
+        "name": "Jodie Foster",
+        "role": ""
+      },
+      {
+        "name": "Cybill Shepherd",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 96,
+    "title": "The Sting",
+    "year": 1973,
+    "rating": 8.3,
+    "runtime": "129 min",
+    "genres": [
+      "Comedy",
+      "Crime",
+      "Drama"
+    ],
+    "synopsis": "Two grifters team up to pull off the ultimate con.",
+    "streaming": [
+      "Prime Video",
+      "Apple TV"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTY5MjM1ODAyNV5BMl5BanBnXkFtZTgwNDgwNzcxMTE@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Paul Newman",
+        "role": ""
+      },
+      {
+        "name": "Robert Redford",
+        "role": ""
+      },
+      {
+        "name": "Robert Shaw",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 97,
+    "title": "Up",
+    "year": 2009,
+    "rating": 8.3,
+    "runtime": "96 min",
+    "genres": [
+      "Animation",
+      "Adventure",
+      "Comedy"
+    ],
+    "synopsis": "78-year-old Carl Fredricksen travels to Paradise Falls in his house equipped with balloons, inadvertently taking a young stowaway.",
+    "streaming": [
+      "Disney+",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMTk3NDE2NzI4NF5BMl5BanBnXkFtZTgwNzE1MzEyMTE@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Ed Asner",
+        "role": ""
+      },
+      {
+        "name": "Jordan Nagai",
+        "role": ""
+      },
+      {
+        "name": "John Ratzenberger",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 98,
+    "title": "L.A. Confidential",
+    "year": 1997,
+    "rating": 8.2,
+    "runtime": "138 min",
+    "genres": [
+      "Crime",
+      "Mystery",
+      "Thriller"
+    ],
+    "synopsis": "As corruption grows in 1950s Los Angeles, three policemen - one strait-laced, one brutal, and one sleazy - investigate a series of murders with their own brand of justice.",
+    "streaming": [
+      "Netflix",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMDQ2YzEyZGItYWE3Zi00Yjc1LWEwNGYtNjk3MTk4YmNjMTQ3XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Kevin Spacey",
+        "role": ""
+      },
+      {
+        "name": "Russell Crowe",
+        "role": ""
+      },
+      {
+        "name": "Guy Pearce",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 99,
+    "title": "Oppenheimer",
+    "year": 2023,
+    "rating": 8.3,
+    "runtime": "180 min",
+    "genres": [
+      "Biography",
+      "Drama",
+      "History"
+    ],
+    "synopsis": "The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.",
+    "streaming": [
+      "Peacock",
+      "Prime Video"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMDBmYTZjNjUtN2M1MS00MTQ2LTk2ODgtNzc2M2QyZGE5NTVjXkEyXkFqcGdeQXVyNzAwMjU2MTY@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Cillian Murphy",
+        "role": ""
+      },
+      {
+        "name": "Emily Blunt",
+        "role": ""
+      },
+      {
+        "name": "Matt Damon",
+        "role": ""
+      }
+    ]
+  },
+  {
+    "id": 100,
+    "title": "Indiana Jones and the Last Crusade",
+    "year": 1989,
+    "rating": 8.2,
+    "runtime": "127 min",
+    "genres": [
+      "Action",
+      "Adventure"
+    ],
+    "synopsis": "In 1938, after his father Professor Henry Jones, Sr. goes missing while pursuing the Holy Grail, Professor Henry 'Indiana' Jones, Jr. finds himself up against Adolf Hitler's Nazis again to stop them from obtaining its powers.",
+    "streaming": [
+      "Disney+",
+      "Paramount+"
+    ],
+    "poster": "https://m.media-amazon.com/images/M/MV5BMjNkMzc2N2QtNjVlNS00ZTk5LTg0MTgtODY2MDAwNTMwZjBjXkEyXkFqcGdeQXVyNDk3NzU2MTQ@._V1_FMjpg_UX1000_.jpg",
+    "cast": [
+      {
+        "name": "Harrison Ford",
+        "role": ""
+      },
+      {
+        "name": "Sean Connery",
+        "role": ""
+      },
+      {
+        "name": "Alison Doody",
+        "role": ""
+      }
+    ]
+  }
+];
 
 const STREAMING_SERVICES = [
   { name: "Netflix", color: "#e50914" },
   { name: "Disney+", color: "#113ccf" },
   { name: "Hulu", color: "#1ce783" },
-  { name: "Prime Video", color: "#00a8e1" },
-  { name: "Max", color: "#b535f6" },
+  { name: "Prime", color: "#00a8e1" },
+  { name: "HBO Max", color: "#b535f6" },
   { name: "Apple TV+", color: "#a2aaad" },
   { name: "Paramount+", color: "#0064ff" },
   { name: "Peacock", color: "#333333" },
@@ -2266,65 +5284,14 @@ const STREAMING_SERVICES = [
 
 const STREAMING_COLORS = {};
 STREAMING_SERVICES.forEach(s => STREAMING_COLORS[s.name] = s.color);
-// Additional provider name variations
-STREAMING_COLORS['Amazon Prime Video'] = '#00a8e1';
-STREAMING_COLORS['HBO Max'] = '#b535f6';
-STREAMING_COLORS['Apple TV Plus'] = '#a2aaad';
-STREAMING_COLORS['Paramount Plus'] = '#0064ff';
-STREAMING_COLORS['Peacock Premium'] = '#333333';
-STREAMING_COLORS['Tubi'] = '#fa382f';
-STREAMING_COLORS['Crunchyroll'] = '#f47521';
-
-// ============================================================
-// DYNAMIC MOVIE ARRAY (replaces hardcoded MOVIES)
-// ============================================================
-let MOVIES = [];
-let moviesLoading = false;
-let currentDiscoverPage = 0;
-let discoverTotalPages = 500;
-
-async function loadMoreMovies(filters) {
-  if (moviesLoading || currentDiscoverPage >= discoverTotalPages) return;
-  moviesLoading = true;
-  try {
-    currentDiscoverPage++;
-    const newMovies = await TMDB.fetchPage(currentDiscoverPage, filters);
-    // Deduplicate by id
-    const existingIds = new Set(MOVIES.map(m => m.id));
-    const unique = newMovies.filter(m => !existingIds.has(m.id));
-    MOVIES.push(...unique);
-  } catch (e) {
-    console.error('Failed to load movies from TMDB:', e);
-  }
-  moviesLoading = false;
-}
-
-async function resetMovies(filters) {
-  MOVIES = [];
-  currentDiscoverPage = 0;
-  discoverTotalPages = 500;
-  state.currentIndex = 0;
-  await loadMoreMovies(filters);
-  await loadMoreMovies(filters); // Pre-fetch 2 pages (40 movies)
-}
-
-function getCurrentFilters() {
-  const f = {};
-  if (state.activeMood) f.mood = state.activeMood;
-  if (state.filters.genres && state.filters.genres.length > 0) f.genres = state.filters.genres;
-  if (state.filters.streaming && state.filters.streaming.length > 0) f.streaming = state.filters.streaming;
-  if (state.filters.yearMin) f.yearMin = state.filters.yearMin;
-  if (state.filters.yearMax) f.yearMax = state.filters.yearMax;
-  return f;
-}
 
 // ============================================================
 // STATE
 // ============================================================
 let state = {
   currentIndex: 0,
-  watchlist: [],
-  watched: [],
+  watchlist: [],       // { movie, addedAt }
+  watched: [],         // { movie, stars, review, watchedAt }
   swipedCount: 0,
   activeTab: 'discover',
   activeWlTab: 'towatch',
@@ -2332,7 +5299,7 @@ let state = {
   sheetOpen: false,
   sheetMovie: null,
   selectedStars: 0,
-  streamingServices: ['Netflix', 'Max', 'Prime Video', 'Disney+'],
+  streamingServices: ['Netflix', 'HBO Max', 'Prime', 'Disney+'],
   isDragging: false,
   isDarkMode: true,
   wlSearch: '',
@@ -2410,6 +5377,7 @@ tabItems.forEach(tab => {
     headerSubtitle.textContent = tabNames[target];
     if (target === 'watchlist') renderWatchlist();
     if (target === 'profile') renderProfile();
+    // Hide FAB and header actions on non-discover tabs
     document.getElementById('fabContainer').style.display = target === 'discover' ? 'block' : 'none';
     document.getElementById('headerActions').style.display = target === 'discover' ? 'flex' : 'none';
   });
@@ -2422,27 +5390,18 @@ const cardContainer = document.getElementById('cardContainer');
 const endScreen = document.getElementById('endScreen');
 
 function renderCard(index, animate = false) {
+  // Check for pending recommendation card first
   if (state.pendingRecommendation) {
     renderRecommendationCard(state.pendingRecommendation, index, animate);
     return;
   }
 
-  // If we're getting close to the end, load more
-  if (index >= MOVIES.length - 5 && !moviesLoading) {
-    loadMoreMovies(getCurrentFilters());
-  }
+  // Apply filters to find the actual movie to show
+  const filteredIndex = (typeof getNextFilteredIndex === 'function') ? getNextFilteredIndex(index) : index;
+  // Update currentIndex to the filtered position
+  if (filteredIndex !== index) state.currentIndex = filteredIndex;
 
-  if (index >= MOVIES.length) {
-    if (moviesLoading) {
-      // Show loading state
-      cardContainer.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:16px">
-          <div style="font-size:48px">🎬</div>
-          <div style="color:var(--text-secondary);font-size:15px;font-weight:600">Loading movies...</div>
-        </div>`;
-      setTimeout(() => renderCard(index, animate), 500);
-      return;
-    }
+  if (filteredIndex >= MOVIES.length) {
     cardContainer.innerHTML = '';
     endScreen.classList.add('active');
     document.querySelector('.progress-bar').style.display = 'none';
@@ -2459,26 +5418,27 @@ function renderCard(index, animate = false) {
     p.classList.toggle('active', p.dataset.mood === (state.activeMood || ''));
   });
 
-  const movie = MOVIES[index];
+  const movie = MOVIES[filteredIndex];
+  const isSponsored = movie.sponsored === true;
 
   const streamingRow = (movie.streaming || []).map(s =>
     `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'}">${s}</span>`
   ).join('');
 
+  // Use poster image if available
   const posterHTML = movie.poster
     ? `<img class="card-poster-img" src="${movie.poster}" alt="${movie.title}" draggable="false" referrerpolicy="no-referrer">`
     : `<div class="card-poster-placeholder" style="background:linear-gradient(135deg, #333, #555)">${movie.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('')}</div>`;
 
-  const genreText = (movie.genres || []).slice(0, 2).join(' · ');
-
   cardContainer.innerHTML = `
-    <div class="movie-card ${animate ? 'entering' : ''}" id="activeCard">
+    <div class="movie-card ${isSponsored ? 'sponsored' : ''} ${animate ? 'entering' : ''}" id="activeCard">
+      ${isSponsored ? '<div class="sponsored-badge">SPONSORED</div>' : ''}
       <div class="card-poster-wrapper">
         ${posterHTML}
       </div>
       <div class="card-streaming-row">${streamingRow}</div>
       <div class="card-info" id="cardInfoTap">
-        <span class="card-title">${movie.title}</span><span class="card-year-inline">${movie.year || ''}</span>
+        <span class="card-title">${movie.title}</span><span class="card-year-inline">${movie.year}</span>
         <div class="card-synopsis-preview">${movie.synopsis}</div>
         <div class="card-tap-hint">
           <span class="tap-arrow">&#9650;</span>
@@ -2490,12 +5450,15 @@ function renderCard(index, animate = false) {
     </div>
   `;
 
+  // Update progress
   const total = MOVIES.length;
-  document.getElementById('progressText').textContent = `${index + 1} of ${total}+`;
-  document.getElementById('progressFill').style.width = `${((index + 1) / Math.max(total, 1)) * 100}%`;
+  document.getElementById('progressText').textContent = `${filteredIndex + 1} of ${total}`;
+  document.getElementById('progressFill').style.width = `${((filteredIndex + 1) / total) * 100}%`;
 
+  // Attach gesture
   setupSwipeGesture(document.getElementById('activeCard'));
 
+  // Tap info area to open detail panel
   const infoArea = document.getElementById('cardInfoTap');
   if (infoArea) {
     infoArea.addEventListener('click', (e) => {
@@ -2503,22 +5466,16 @@ function renderCard(index, animate = false) {
       openDetailPanel(movie);
     });
   }
+}
 
-  // Pre-fetch streaming info for current card (non-blocking)
-  if (!movie._detailsLoaded) {
-    TMDB.fetchDetails(movie._tmdbId || movie.id).then(details => {
-      TMDB.enrichFromDetails(movie, details);
-      // Re-render streaming badges if this card is still showing
-      if (MOVIES[state.currentIndex] && MOVIES[state.currentIndex].id === movie.id) {
-        const streamRow = document.querySelector('.card-streaming-row');
-        if (streamRow) {
-          streamRow.innerHTML = (movie.streaming || []).map(s =>
-            `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'}">${s}</span>`
-          ).join('');
-        }
-      }
-    }).catch(() => {});
-  }
+function adjustColor(hex, amount) {
+  let col = hex.replace('#', '');
+  if (col.length === 3) col = col.split('').map(c => c + c).join('');
+  const num = parseInt(col, 16);
+  let r = Math.min(255, ((num >> 16) & 255) + amount);
+  let g = Math.min(255, ((num >> 8) & 255) + amount);
+  let b = Math.min(255, (num & 255) + amount);
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 }
 
 // ============================================================
@@ -2549,6 +5506,8 @@ function setupSwipeGesture(card) {
     currentY = (y - startY) * 0.3;
     const rotation = currentX * ROTATION_FACTOR;
     card.style.transform = `translateX(${currentX}px) translateY(${currentY}px) rotate(${rotation}deg)`;
+
+    // Overlay opacity
     const progress = Math.min(Math.abs(currentX) / SWIPE_THRESHOLD, 1);
     if (currentX > 0) {
       overlayLike.style.opacity = progress;
@@ -2565,6 +5524,7 @@ function setupSwipeGesture(card) {
     state.isDragging = false;
 
     if (Math.abs(currentX) > SWIPE_THRESHOLD) {
+      // Swipe complete — fly off
       const direction = currentX > 0 ? 1 : -1;
       const flyX = direction * (window.innerWidth + 200);
       const flyRotation = direction * 30;
@@ -2572,6 +5532,7 @@ function setupSwipeGesture(card) {
       card.style.transform = `translateX(${flyX}px) translateY(${currentY}px) rotate(${flyRotation}deg)`;
       card.style.opacity = '0';
 
+      // Capture for rewind
       const swipedMovie = MOVIES[state.currentIndex];
       const prevIndex = state.currentIndex;
       const prevSwipedCount = state.swipedCount;
@@ -2588,6 +5549,7 @@ function setupSwipeGesture(card) {
 
       setTimeout(() => { renderCard(state.currentIndex, true); updateRewindBtn(); checkRecommendation(); }, 350);
     } else {
+      // Snap back
       card.classList.add('animating');
       card.style.transform = 'translateX(0) translateY(0) rotate(0deg)';
       overlayLike.style.opacity = 0;
@@ -2597,10 +5559,12 @@ function setupSwipeGesture(card) {
     currentY = 0;
   }
 
+  // Ignore swipe on interactive elements
   function isInteractive(el) {
     return el.closest('.card-info') || el.closest('.fab-container');
   }
 
+  // Mouse events
   card.addEventListener('mousedown', e => {
     if (isInteractive(e.target)) return;
     e.preventDefault();
@@ -2609,6 +5573,7 @@ function setupSwipeGesture(card) {
   document.addEventListener('mousemove', e => { if (isDragging) { e.preventDefault(); onMove(e.clientX, e.clientY); }});
   document.addEventListener('mouseup', () => { if (isDragging) onEnd(); });
 
+  // Touch events
   card.addEventListener('touchstart', e => {
     if (isInteractive(e.target)) return;
     const t = e.touches[0]; onStart(t.clientX, t.clientY);
@@ -2618,7 +5583,7 @@ function setupSwipeGesture(card) {
 }
 
 // ============================================================
-// PROGRAMMATIC SWIPE
+// PROGRAMMATIC SWIPE (used by FAB or other triggers)
 // ============================================================
 function swipeCardProgrammatic(direction) {
   const card = document.getElementById('activeCard');
@@ -2695,6 +5660,7 @@ wlTabs.forEach(tab => {
   });
 });
 
+// Search input wiring
 document.getElementById('wlSearchInput').addEventListener('input', e => {
   state.wlSearch = e.target.value;
   const clear = document.getElementById('wlSearchClear');
@@ -2703,8 +5669,6 @@ document.getElementById('wlSearchInput').addEventListener('input', e => {
 });
 document.getElementById('wlSearchClear').addEventListener('click', () => {
   state.wlSearch = '';
-  document.getElementById('wlSearchInput').value = '';
-  document.getElementById('wlSearchClear').classList.remove('visible');
   renderWatchlist();
 });
 
@@ -2713,6 +5677,7 @@ function renderWatchlist() {
   document.getElementById('towatchCount').textContent = `(${state.watchlist.length})`;
   document.getElementById('watchedCount').textContent = `(${state.watched.length})`;
 
+  // Sync search input
   const searchInput = document.getElementById('wlSearchInput');
   const searchClear = document.getElementById('wlSearchClear');
   if (searchInput) {
@@ -2723,6 +5688,7 @@ function renderWatchlist() {
   const query = state.wlSearch.toLowerCase().trim();
   let items = state.activeWlTab === 'towatch' ? state.watchlist : state.watched;
 
+  // Apply search filter
   if (query) {
     items = items.filter(item => item.movie.title.toLowerCase().includes(query));
   }
@@ -2742,16 +5708,18 @@ function renderWatchlist() {
         <div class="empty-icon">${emptyMsg.icon}</div>
         <div class="empty-title">${emptyMsg.title}</div>
         <div class="empty-subtitle">${emptyMsg.sub}</div>
-      </div>`;
+      </div>
+    `;
     return;
   }
 
   // To Watch: Genre-grouped horizontal rows
   if (state.activeWlTab === 'towatch') {
     if (!state.expandedGenres) state.expandedGenres = {};
+
     const genreGroups = {};
     items.forEach(item => {
-      const genre = (item.movie.genres && item.movie.genres[0]) || 'Other';
+      const genre = item.movie.genres[0] || 'Other';
       if (!genreGroups[genre]) genreGroups[genre] = [];
       genreGroups[genre].push(item);
     });
@@ -2773,9 +5741,10 @@ function renderWatchlist() {
             ${posterHTML}
             <div class="wl-genre-card-info">
               <div class="wl-genre-card-title">${m.title}</div>
-              <div class="wl-genre-card-year">${m.year || ''}</div>
+              <div class="wl-genre-card-year">${m.year}</div>
             </div>
-          </div>`;
+          </div>
+        `;
       }).join('');
 
       return `
@@ -2787,7 +5756,8 @@ function renderWatchlist() {
           <div class="${isExpanded ? 'wl-genre-grid' : 'wl-genre-row'}">
             ${movieCards}
           </div>
-        </div>`;
+        </div>
+      `;
     }).join('');
 
     container.querySelectorAll('.wl-genre-see-all').forEach(btn => {
@@ -2809,11 +5779,12 @@ function renderWatchlist() {
     { key: 'year', label: '📅 Year' },
   ];
 
+  // Sort items
   let sortedItems = [...items];
   if (state.watchedSort === 'date') sortedItems.sort((a, b) => b.watchedAt - a.watchedAt);
   else if (state.watchedSort === 'rating') sortedItems.sort((a, b) => b.stars - a.stars);
   else if (state.watchedSort === 'title') sortedItems.sort((a, b) => a.movie.title.localeCompare(b.movie.title));
-  else if (state.watchedSort === 'year') sortedItems.sort((a, b) => (b.movie.year || 0) - (a.movie.year || 0));
+  else if (state.watchedSort === 'year') sortedItems.sort((a, b) => b.movie.year - a.movie.year);
 
   const sortPills = sortOptions.map(o =>
     `<div class="sort-pill ${state.watchedSort === o.key ? 'active' : ''}" data-sort="${o.key}">${o.label}</div>`
@@ -2833,7 +5804,7 @@ function renderWatchlist() {
         const empty = 5 - full - (hasHalf ? 1 : 0);
         stars = '&#9733;'.repeat(full) + (hasHalf ? '&#11242;' : '') + '&#9734;'.repeat(empty);
       }
-      const meta = `${m.year || ''} &middot; ${(m.genres && m.genres[0]) || ''}`;
+      const meta = `${m.year} &middot; ${m.genres[0]}`;
       return `
         <div class="wl-item">
           ${posterHTML}
@@ -2843,8 +5814,10 @@ function renderWatchlist() {
             ${stars ? `<div class="wl-stars">${stars}</div>` : ''}
           </div>
           <div class="wl-remove" onclick="removeFromWatched(${m.id})">&#10005;</div>
-        </div>`;
-    }).join('')}</div>`;
+        </div>
+      `;
+    }).join('')}</div>
+  `;
 
   container.querySelectorAll('.sort-pill').forEach(pill => {
     pill.addEventListener('click', () => {
@@ -2856,7 +5829,7 @@ function renderWatchlist() {
 }
 
 // ============================================================
-// DETAIL PANEL (with lazy TMDB enrichment)
+// DETAIL PANEL (slide-up full info)
 // ============================================================
 const detailOverlay = document.getElementById('detailOverlay');
 const detailPanel = document.getElementById('detailPanel');
@@ -2864,70 +5837,52 @@ const detailClose = document.getElementById('detailClose');
 const detailHeaderTitle = document.getElementById('detailHeaderTitle');
 const detailBody = document.getElementById('detailBody');
 
-async function openDetailPanel(movie) {
-  detailHeaderTitle.textContent = movie.title;
-
-  // Show immediately with what we have
-  renderDetailContent(movie);
-  detailOverlay.classList.add('open');
-  detailPanel.classList.add('open');
-
-  // Fetch full details if not loaded
-  if (!movie._detailsLoaded && movie._tmdbId) {
-    try {
-      const details = await TMDB.fetchDetails(movie._tmdbId);
-      TMDB.enrichFromDetails(movie, details);
-      renderDetailContent(movie);
-    } catch (e) {
-      console.error('Failed to fetch movie details:', e);
-    }
-  }
-}
-
-function renderDetailContent(movie) {
+function openDetailPanel(movie) {
   const initials = movie.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('');
 
+  // Star display for movie rating
   const fullStars = Math.floor(movie.rating / 2);
   const halfStar = (movie.rating / 2) - fullStars >= 0.5;
   let starsHTML = '';
   for (let i = 0; i < 5; i++) {
-    if (i < fullStars) starsHTML += '<span style="color:var(--gold)">★</span>';
-    else if (i === fullStars && halfStar) starsHTML += '<span style="color:var(--gold)">★</span>';
-    else starsHTML += '<span style="color:rgba(255,255,255,0.12)">★</span>';
+    if (i < fullStars) starsHTML += '<span style="color:var(--gold)">&#9733;</span>';
+    else if (i === fullStars && halfStar) starsHTML += '<span style="color:var(--gold)">&#9733;</span>';
+    else starsHTML += '<span style="color:rgba(255,255,255,0.12)">&#9733;</span>';
   }
 
-  const genreChips = (movie.genres || []).map(g => `<span class="detail-genre-chip">${g}</span>`).join('');
+  // Genre chips
+  const genreChips = movie.genres.map(g => `<span class="detail-genre-chip">${g}</span>`).join('');
 
-  const streamBadges = (movie.streaming || []).map(s =>
+  // Streaming badges
+  const streamBadges = movie.streaming.map(s =>
     `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'};font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff;letter-spacing:0.3px">${s}</span>`
-  ).join('') || '<span style="font-size:12px;color:var(--text-muted)">Loading streaming info...</span>';
+  ).join('');
 
+  // Cast grid
   const castHTML = (movie.cast || []).map(c => {
     const castInitial = c.name.split(' ').map(n => n[0]).join('');
-    const avatarInner = c.profilePath
-      ? `<img src="${c.profilePath}" style="width:38px;height:38px;border-radius:50%;object-fit:cover" referrerpolicy="no-referrer">`
-      : castInitial;
     return `
       <div class="cast-card">
-        <div class="cast-avatar">${avatarInner}</div>
+        <div class="cast-avatar">${castInitial}</div>
         <div class="cast-info">
           <div class="cast-name">${c.name}</div>
           <div class="cast-role">${c.role}</div>
         </div>
       </div>`;
-  }).join('') || '<span style="font-size:12px;color:var(--text-muted)">Loading cast...</span>';
+  }).join('');
 
   const detailPosterHTML = movie.poster
     ? `<img class="detail-mini-poster-img" src="${movie.poster}" alt="${movie.title}" referrerpolicy="no-referrer">`
     : `<div class="detail-mini-poster" style="background:linear-gradient(135deg, #333, #555)">${initials}</div>`;
 
+  detailHeaderTitle.textContent = movie.title;
   detailBody.innerHTML = `
     <div class="detail-poster-row">
       ${detailPosterHTML}
       <div class="detail-meta">
         <div class="detail-title">${movie.title}</div>
         <div class="detail-year-rating">
-          <span>${movie.year || ''}</span>
+          <span>${movie.year}</span>
           <span>&middot;</span>
           <span class="detail-star">${starsHTML} ${movie.rating}/10</span>
         </div>
@@ -2941,23 +5896,29 @@ function renderDetailContent(movie) {
     <div class="detail-section-label">Synopsis</div>
     <div class="detail-synopsis">${movie.synopsis}</div>
 
-    <div class="detail-section-label">Cast</div>
-    <div class="detail-cast-grid">${castHTML}</div>
+    ${castHTML ? `
+      <div class="detail-section-label">Cast</div>
+      <div class="detail-cast-grid">${castHTML}</div>
+    ` : ''}
 
     <div class="detail-extra-row">
       <div class="detail-extra-item">
-        <div class="detail-extra-value">${movie.rating || '-'}</div>
-        <div class="detail-extra-label">TMDB</div>
+        <div class="detail-extra-value">${movie.rating}</div>
+        <div class="detail-extra-label">IMDB</div>
       </div>
       <div class="detail-extra-item">
-        <div class="detail-extra-value">${movie.runtime || '—'}</div>
+        <div class="detail-extra-value">${movie.runtime || 'N/A'}</div>
         <div class="detail-extra-label">Runtime</div>
       </div>
       <div class="detail-extra-item">
-        <div class="detail-extra-value">${(movie.genres && movie.genres[0]) || '-'}</div>
+        <div class="detail-extra-value">${movie.genres[0] || '-'}</div>
         <div class="detail-extra-label">Genre</div>
       </div>
-    </div>`;
+    </div>
+  `;
+
+  detailOverlay.classList.add('open');
+  detailPanel.classList.add('open');
 }
 
 function closeDetailPanel() {
@@ -2991,20 +5952,13 @@ document.getElementById('fabShare').addEventListener('click', () => {
   closeFab();
   if (state.currentIndex < MOVIES.length) {
     const m = MOVIES[state.currentIndex];
-    const url = `https://www.themoviedb.org/movie/${m._tmdbId || m.id}`;
-    if (navigator.share) {
-      navigator.share({ title: m.title, text: `Check out ${m.title} on FlickPick!`, url: url }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(url).then(() => showToast('TMDB link copied!', 'info')).catch(() => showToast('Could not copy link', 'info'));
-    }
+    showToast(`Share link for "${m.title}" copied!`, 'info');
   }
 });
 
 document.getElementById('fabSave').addEventListener('click', () => {
   closeFab();
-  if (state.currentIndex < MOVIES.length) {
-    addToWatchlist(MOVIES[state.currentIndex]);
-  }
+  showToast('Saved to current session!', 'success');
 });
 
 function closeFab() {
@@ -3013,6 +5967,7 @@ function closeFab() {
   fabMenu.classList.remove('open');
 }
 
+// Close FAB when clicking outside
 document.addEventListener('click', (e) => {
   if (state.fabOpen && !e.target.closest('.fab-container')) {
     closeFab();
@@ -3030,8 +5985,11 @@ function updateStarDisplay(rating) {
   for (let i = 1; i <= 5; i++) {
     const fill = document.getElementById('sf' + i);
     fill.className = 'star-fill';
-    if (rating >= i) fill.classList.add('full');
-    else if (rating >= i - 0.5) fill.classList.add('half');
+    if (rating >= i) {
+      fill.classList.add('full');
+    } else if (rating >= i - 0.5) {
+      fill.classList.add('half');
+    }
   }
   const label = document.getElementById('ratingValueLabel');
   if (rating > 0) {
@@ -3046,6 +6004,7 @@ starWrappers.forEach(wrapper => {
     const rect = wrapper.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const starNum = parseInt(wrapper.dataset.star);
+    // Left half = half star, right half = full star
     const isHalf = clickX < rect.width / 2;
     state.selectedStars = isHalf ? starNum - 0.5 : starNum;
     updateStarDisplay(state.selectedStars);
@@ -3063,8 +6022,9 @@ function openRatingSheet(movie) {
     ${sheetPosterHTML}
     <div>
       <div class="sheet-title">${movie.title}</div>
-      <div class="sheet-subtitle">${movie.year || ''} &middot; ${(movie.genres || []).join(', ')}</div>
-    </div>`;
+      <div class="sheet-subtitle">${movie.year} &middot; ${movie.genres.join(', ')}</div>
+    </div>
+  `;
 
   updateStarDisplay(0);
   document.getElementById('reviewInput').value = '';
@@ -3091,6 +6051,7 @@ document.getElementById('sheetSubmit').addEventListener('click', () => {
   markAsWatched(state.sheetMovie, state.selectedStars, review);
   closeRatingSheet();
 
+  // Also advance the card if rating current card
   if (MOVIES[state.currentIndex] && MOVIES[state.currentIndex].id === state.sheetMovie.id) {
     state.swipedCount++;
     state.currentIndex++;
@@ -3127,6 +6088,7 @@ function renderProfile() {
     document.getElementById('statRating').textContent = '-';
   }
 
+  // Watch time & films logged
   const totalMins = state.watched.reduce((sum, w) => sum + parseRuntimeMinutes(w.movie.runtime), 0);
   document.getElementById('statWatchTime').textContent = totalMins > 0 ? formatWatchTime(totalMins) : '0h 0m';
   document.getElementById('statMoviesWatched').textContent = state.watched.length;
@@ -3152,19 +6114,21 @@ function renderProfile() {
           </div>
           <div class="top-movie-info">
             <div class="top-movie-title">${movie.title}</div>
-            <div class="top-movie-stars">★ ${starsDisplay}</div>
+            <div class="top-movie-stars">&#9733; ${starsDisplay}</div>
           </div>
-        </div>`;
+        </div>
+      `;
     }).join('');
   }
 
-  // Genre Chart
+  // Genre Breakdown Chart
   const genreChart = document.getElementById('genreChart');
-  if (state.watched.length === 0) {
+  const allWatched = state.watched;
+  if (allWatched.length === 0) {
     genreChart.innerHTML = '<div class="genre-chart-empty">Watch some movies to see your taste profile!</div>';
   } else {
     const genreCounts = {};
-    state.watched.forEach(w => {
+    allWatched.forEach(w => {
       (w.movie.genres || []).forEach(g => { genreCounts[g] = (genreCounts[g] || 0) + 1; });
     });
     const sorted = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
@@ -3185,8 +6149,9 @@ function renderProfile() {
     <div class="stream-toggle ${state.streamingServices.includes(s.name) ? 'active' : ''}" data-service="${s.name}">
       <div class="stream-dot" style="background:${s.color}"></div>
       <span class="stream-name">${s.name}</span>
-      <span class="stream-check">✓</span>
-    </div>`).join('');
+      <span class="stream-check">&#10003;</span>
+    </div>
+  `).join('');
 
   grid.querySelectorAll('.stream-toggle').forEach(toggle => {
     toggle.addEventListener('click', () => {
@@ -3212,7 +6177,9 @@ function showToast(message, type = 'info') {
   clearTimeout(toastTimeout);
   toastEl.textContent = message;
   toastEl.className = `toast ${type} show`;
-  toastTimeout = setTimeout(() => { toastEl.classList.remove('show'); }, 2200);
+  toastTimeout = setTimeout(() => {
+    toastEl.classList.remove('show');
+  }, 2200);
 }
 
 // ============================================================
@@ -3239,20 +6206,15 @@ function fireConfetti() {
 // ============================================================
 // RESTART
 // ============================================================
-document.getElementById('btnRestart').addEventListener('click', async () => {
+document.getElementById('btnRestart').addEventListener('click', () => {
   state.currentIndex = 0;
   state.swipedCount = 0;
-  state.lastSwiped = null;
-  state.pendingRecommendation = null;
-  state.rightSwipeCount = 0;
   saveState();
-  await resetMovies(getCurrentFilters());
   renderCard(0, true);
-  updateRewindBtn();
 });
 
 // ============================================================
-// PARTY TAB (demo)
+// PARTY TAB INTERACTIVITY (demo toasts)
 // ============================================================
 document.getElementById('partyCreate').addEventListener('click', () => {
   showToast('Party Mode coming soon!', 'info');
@@ -3266,10 +6228,12 @@ document.getElementById('partyJoin').addEventListener('click', () => {
 // ============================================================
 function getRecommendedMovie() {
   if (state.watched.length === 0) return null;
+  // Find highest-rated watched movie
   const topWatched = [...state.watched].sort((a, b) => b.stars - a.stars)[0];
   const topMovie = topWatched.movie;
   const primaryGenre = (topMovie.genres || [])[0];
   if (!primaryGenre) return null;
+  // Find unseen movies in same genre
   const seenIds = new Set([
     ...state.watched.map(w => w.movie.id),
     ...state.watchlist.map(w => w.movie.id),
@@ -3280,6 +6244,7 @@ function getRecommendedMovie() {
     (m.genres || []).includes(primaryGenre)
   );
   if (candidates.length === 0) return null;
+  // Sort by rating desc, pick top
   candidates.sort((a, b) => (b.rating || 0) - (a.rating || 0));
   return { movie: candidates[0], because: topMovie.title };
 }
@@ -3287,7 +6252,9 @@ function getRecommendedMovie() {
 function checkRecommendation() {
   if (!state.pendingRecommendation && state.rightSwipeCount > 0 && state.rightSwipeCount % 5 === 0) {
     const rec = getRecommendedMovie();
-    if (rec) state.pendingRecommendation = rec;
+    if (rec) {
+      state.pendingRecommendation = rec;
+    }
   }
 }
 
@@ -3308,10 +6275,12 @@ function renderRecommendationCard(rec, resumeIndex, animate = false) {
   cardContainer.innerHTML = `
     <div class="movie-card recommended ${animate ? 'entering' : ''}" id="activeCard">
       <div class="recommended-badge">✨ Because You Liked</div>
-      <div class="card-poster-wrapper">${posterHTML}</div>
+      <div class="card-poster-wrapper">
+        ${posterHTML}
+      </div>
       <div class="card-streaming-row">${streamingRow}</div>
       <div class="card-info" id="cardInfoTap">
-        <span class="card-title">${movie.title}</span><span class="card-year-inline">${movie.year || ''}</span>
+        <span class="card-title">${movie.title}</span><span class="card-year-inline">${movie.year}</span>
         <span class="rec-reason">Because you liked "${rec.because}"</span>
         <div class="card-synopsis-preview">${movie.synopsis}</div>
         <div class="card-tap-hint">
@@ -3321,12 +6290,15 @@ function renderRecommendationCard(rec, resumeIndex, animate = false) {
       </div>
       <div class="swipe-overlay like" id="overlayLike">SAVE</div>
       <div class="swipe-overlay nope" id="overlayNope">NOPE</div>
-    </div>`;
+    </div>
+  `;
 
   document.getElementById('progressText').textContent = '⭐ Recommended for you';
-  document.getElementById('progressFill').style.width = `${((resumeIndex + 1) / Math.max(MOVIES.length, 1)) * 100}%`;
+  document.getElementById('progressFill').style.width = `${((resumeIndex + 1) / MOVIES.length) * 100}%`;
 
-  setupSwipeGestureRec(document.getElementById('activeCard'), movie, resumeIndex);
+  // Custom gesture for recommendation: swiping does NOT advance state.currentIndex
+  const card = document.getElementById('activeCard');
+  setupSwipeGestureRec(card, movie, resumeIndex);
 
   const infoArea = document.getElementById('cardInfoTap');
   if (infoArea) {
@@ -3344,31 +6316,43 @@ function setupSwipeGestureRec(card, movie, resumeIndex) {
   const overlayLike = card.querySelector('#overlayLike');
   const overlayNope = card.querySelector('#overlayNope');
 
-  function onStart(x, y) { isDragging = true; state.isDragging = true; startX = x; startY = y; card.style.transition = 'none'; card.classList.remove('entering'); }
+  function onStart(x, y) {
+    isDragging = true;
+    state.isDragging = true;
+    startX = x; startY = y;
+    card.style.transition = 'none';
+    card.classList.remove('entering');
+  }
   function onMove(x, y) {
     if (!isDragging) return;
-    currentX = x - startX; currentY = (y - startY) * 0.3;
-    card.style.transform = `translateX(${currentX}px) translateY(${currentY}px) rotate(${currentX * 0.08}deg)`;
+    currentX = x - startX;
+    currentY = (y - startY) * 0.3;
+    const rotation = currentX * 0.08;
+    card.style.transform = `translateX(${currentX}px) translateY(${currentY}px) rotate(${rotation}deg)`;
     const progress = Math.min(Math.abs(currentX) / 100, 1);
     if (currentX > 0) { overlayLike.style.opacity = progress; overlayNope.style.opacity = 0; }
     else { overlayNope.style.opacity = progress; overlayLike.style.opacity = 0; }
   }
   function onEnd() {
     if (!isDragging) return;
-    isDragging = false; state.isDragging = false;
+    isDragging = false;
+    state.isDragging = false;
     if (Math.abs(currentX) > 100) {
       const direction = currentX > 0 ? 1 : -1;
+      const flyX = direction * (window.innerWidth + 200);
       card.classList.add('animating');
-      card.style.transform = `translateX(${direction * (window.innerWidth + 200)}px) translateY(${currentY}px) rotate(${direction * 30}deg)`;
+      card.style.transform = `translateX(${flyX}px) translateY(${currentY}px) rotate(${direction * 30}deg)`;
       card.style.opacity = '0';
       if (direction > 0) addToWatchlist(movie);
+      // Clear recommendation, resume at same index
       state.pendingRecommendation = null;
       saveState();
       setTimeout(() => { renderCard(resumeIndex, true); updateRewindBtn(); }, 350);
     } else {
       card.classList.add('animating');
       card.style.transform = 'translateX(0) translateY(0) rotate(0deg)';
-      overlayLike.style.opacity = 0; overlayNope.style.opacity = 0;
+      overlayLike.style.opacity = 0;
+      overlayNope.style.opacity = 0;
     }
     currentX = 0; currentY = 0;
   }
@@ -3382,8 +6366,36 @@ function setupSwipeGestureRec(card, movie, resumeIndex) {
 }
 
 // ============================================================
-// FILTER HELPERS (server-side via TMDB Discover)
+// FILTER HELPERS
 // ============================================================
+function moviePassesFilters(movie) {
+  // Mood filter
+  if (state.activeMood) {
+    if (!movie.genres || !movie.genres.some(g => g === state.activeMood)) return false;
+  }
+  // Genre filter
+  if (state.filters.genres && state.filters.genres.length > 0) {
+    if (!movie.genres || !state.filters.genres.some(g => movie.genres.includes(g))) return false;
+  }
+  // Streaming filter
+  if (state.filters.streaming && state.filters.streaming.length > 0) {
+    if (!movie.streaming || !state.filters.streaming.some(s => movie.streaming.includes(s))) return false;
+  }
+  // Year filter
+  if (state.filters.yearMin && movie.year < state.filters.yearMin) return false;
+  if (state.filters.yearMax && movie.year > state.filters.yearMax) return false;
+  return true;
+}
+
+function getNextFilteredIndex(fromIndex) {
+  let idx = fromIndex;
+  while (idx < MOVIES.length) {
+    if (moviePassesFilters(MOVIES[idx])) return idx;
+    idx++;
+  }
+  return MOVIES.length; // end of list
+}
+
 function getActiveFilterCount() {
   let count = 0;
   if (state.filters.genres && state.filters.genres.length > 0) count += state.filters.genres.length;
@@ -3404,113 +6416,109 @@ function updateFilterBadge() {
 }
 
 function initFilterPanel() {
-  // Genre chips from TMDB genre list
-  const allGenres = TMDB.genreList.map(g => g.name).sort();
+  // Populate genre chips
+  const allGenres = [...new Set(MOVIES.flatMap(m => m.genres || []))].sort();
   const genreChips = document.getElementById('filterGenreChips');
   if (genreChips) {
     genreChips.innerHTML = allGenres.map(g =>
-      `<div class="filter-chip ${(state.filters.genres || []).includes(g) ? 'active' : ''}" data-genre="${g}">${g}</div>`
+      `<div class="filter-chip ${state.filters.genres.includes(g) ? 'active' : ''}" data-genre="${g}">${g}</div>`
     ).join('');
     genreChips.querySelectorAll('.filter-chip').forEach(chip => {
       chip.addEventListener('click', () => chip.classList.toggle('active'));
     });
   }
 
-  // Streaming chips
+  // Populate streaming chips
+  const allStreaming = [...new Set(MOVIES.flatMap(m => m.streaming || []))].sort();
   const streamChips = document.getElementById('filterStreamChips');
   if (streamChips) {
-    streamChips.innerHTML = STREAMING_SERVICES.map(s =>
-      `<div class="filter-chip ${(state.filters.streaming || []).includes(s.name) ? 'active' : ''}" data-stream="${s.name}">${s.name}</div>`
+    streamChips.innerHTML = allStreaming.map(s =>
+      `<div class="filter-chip ${state.filters.streaming.includes(s) ? 'active' : ''}" data-stream="${s}">${s}</div>`
     ).join('');
     streamChips.querySelectorAll('.filter-chip').forEach(chip => {
       chip.addEventListener('click', () => chip.classList.toggle('active'));
     });
   }
 
+  // Year inputs
   const yearMin = document.getElementById('filterYearMin');
   const yearMax = document.getElementById('filterYearMax');
   if (yearMin) yearMin.value = state.filters.yearMin || '';
   if (yearMax) yearMax.value = state.filters.yearMax || '';
 
+  // Clear all
   document.getElementById('filterClearBtn').addEventListener('click', () => {
     document.querySelectorAll('#filterGenreChips .filter-chip, #filterStreamChips .filter-chip').forEach(c => c.classList.remove('active'));
     if (yearMin) yearMin.value = '';
     if (yearMax) yearMax.value = '';
   });
 
-  document.getElementById('filterApplyBtn').addEventListener('click', async () => {
+  // Apply
+  document.getElementById('filterApplyBtn').addEventListener('click', () => {
     state.filters.genres = [...document.querySelectorAll('#filterGenreChips .filter-chip.active')].map(c => c.dataset.genre);
     state.filters.streaming = [...document.querySelectorAll('#filterStreamChips .filter-chip.active')].map(c => c.dataset.stream);
-    const yearMin = document.getElementById('filterYearMin');
-    const yearMax = document.getElementById('filterYearMax');
     state.filters.yearMin = yearMin && yearMin.value ? parseInt(yearMin.value) : null;
     state.filters.yearMax = yearMax && yearMax.value ? parseInt(yearMax.value) : null;
     closeFilterPanel();
     saveState();
     updateFilterBadge();
-
-    // Re-fetch movies with new filters from TMDB
-    cardContainer.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:16px">
-        <div style="font-size:48px">🔍</div>
-        <div style="color:var(--text-secondary);font-size:15px;font-weight:600">Applying filters...</div>
-      </div>`;
-    await resetMovies(getCurrentFilters());
-    renderCard(0, true);
+    const nextIdx = getNextFilteredIndex(state.currentIndex);
+    renderCard(nextIdx);
   });
 }
 
 function openFilterPanel() {
   initFilterPanel();
   document.getElementById('filterPanel').classList.add('open');
+  document.getElementById('filterBtn').classList.add('active');
 }
 
 function closeFilterPanel() {
   document.getElementById('filterPanel').classList.remove('open');
 }
 
+// Filter button click
 document.getElementById('filterBtn').addEventListener('click', () => {
   const panel = document.getElementById('filterPanel');
-  if (panel.classList.contains('open')) closeFilterPanel();
-  else openFilterPanel();
+  if (panel.classList.contains('open')) {
+    closeFilterPanel();
+  } else {
+    openFilterPanel();
+  }
 });
 
-// Mood pills — trigger TMDB re-fetch with genre filter
-document.getElementById('moodRow').addEventListener('click', async (e) => {
+// Mood pills
+document.getElementById('moodRow').addEventListener('click', e => {
   const pill = e.target.closest('.mood-pill');
   if (!pill) return;
   document.querySelectorAll('.mood-pill').forEach(p => p.classList.remove('active'));
   pill.classList.add('active');
-  const newMood = pill.dataset.mood || null;
-
-  if (newMood !== state.activeMood) {
-    state.activeMood = newMood;
-    saveState();
-
-    cardContainer.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:16px">
-        <div style="font-size:48px">🎬</div>
-        <div style="color:var(--text-secondary);font-size:15px;font-weight:600">Loading ${newMood || 'all'} movies...</div>
-      </div>`;
-    await resetMovies(getCurrentFilters());
-    renderCard(0, true);
-  }
+  state.activeMood = pill.dataset.mood;
+  saveState();
+  const nextIdx = getNextFilteredIndex(state.currentIndex);
+  renderCard(nextIdx);
 });
 
 // ============================================================
-// REWIND
+// REWIND BUTTON
 // ============================================================
 function updateRewindBtn() {
   const btn = document.getElementById('rewindBtn');
   if (!btn) return;
-  btn.classList.toggle('disabled', !state.lastSwiped);
+  if (state.lastSwiped) {
+    btn.classList.remove('disabled');
+  } else {
+    btn.classList.add('disabled');
+  }
 }
 
 function doRewind() {
   if (!state.lastSwiped) return;
   const { movie, direction, previousIndex, previousSwipedCount } = state.lastSwiped;
+  // Restore index and swiped count
   state.currentIndex = previousIndex;
   state.swipedCount = previousSwipedCount;
+  // If the card was swiped right (added to watchlist), remove it
   if (direction === 'right') {
     state.watchlist = state.watchlist.filter(w => w.movie.id !== movie.id);
   }
@@ -3534,10 +6542,12 @@ function applyTheme(isDark) {
   if (!track) return;
   if (isDark) {
     track.classList.add('on'); track.classList.remove('off');
-    icon.textContent = '🌙'; label.textContent = 'Dark Mode';
+    icon.textContent = '🌙';
+    label.textContent = 'Dark Mode';
   } else {
     track.classList.remove('on'); track.classList.add('off');
-    icon.textContent = '☀️'; label.textContent = 'Light Mode';
+    icon.textContent = '☀️';
+    label.textContent = 'Light Mode';
   }
 }
 
@@ -3548,42 +6558,17 @@ document.getElementById('themeToggleItem').addEventListener('click', () => {
 });
 
 // ============================================================
-// INIT — async bootstrap
+// INIT
 // ============================================================
-(async function init() {
-  applyTheme(state.isDarkMode !== false);
-  updateRewindBtn();
-  updateFilterBadge();
-
-  // Show loading state
-  cardContainer.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:16px">
-      <div style="font-size:48px;animation:pulse 1.5s infinite">🎬</div>
-      <div style="color:var(--text-secondary);font-size:15px;font-weight:600">Connecting to TMDB...</div>
-    </div>`;
-
-  try {
-    await TMDB.init();
-    await resetMovies(getCurrentFilters());
-
-    // Sync mood pills
-    document.querySelectorAll('.mood-pill').forEach(p => {
-      p.classList.toggle('active', p.dataset.mood === (state.activeMood || ''));
-    });
-
-    renderCard(state.currentIndex);
-    renderProfile();
-  } catch (e) {
-    console.error('Failed to initialize TMDB:', e);
-    cardContainer.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:16px;padding:20px;text-align:center">
-        <div style="font-size:48px">⚠️</div>
-        <div style="color:var(--text-primary);font-size:16px;font-weight:700">Connection Error</div>
-        <div style="color:var(--text-secondary);font-size:14px">Could not connect to TMDB. Check your internet connection and refresh.</div>
-      </div>`;
-  }
-})();
-
+applyTheme(state.isDarkMode !== false); // default dark
+updateRewindBtn();
+updateFilterBadge();
+// Sync mood pills on load
+document.querySelectorAll('.mood-pill').forEach(p => {
+  p.classList.toggle('active', p.dataset.mood === (state.activeMood || ''));
+});
+renderCard(state.currentIndex);
+renderProfile();
 </script>
 </body>
 </html>
