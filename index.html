@@ -62,7 +62,7 @@
 [data-theme="light"] .rating-big-value { color: #b8860b; }
 [data-theme="light"] .wl-stars { color: #b8860b; }
 [data-theme="light"] .top-movie-stars { color: #b8860b; }
-[data-theme="light"] .star-slider-bg { color: rgba(0,0,0,0.15); }
+[data-theme="light"] .star-slider-track.bg svg { fill: rgba(0,0,0,0.15); }
 [data-theme="light"] .sheet-handle { background: rgba(0,0,0,0.15); }
 [data-theme="light"] .card-streaming-row { background: rgba(0,0,0,0.6); }
 
@@ -995,56 +995,51 @@ body {
   font-weight: 500;
 }
 
-/* Star slider — 5 stars that fill continuously as user drags */
+/* Star slider — drag across stars to fill them continuously */
 .star-slider-wrap {
   position: relative;
-  width: 100%;
-  max-width: 280px;
-  height: 48px;
+  width: 260px;
+  height: 52px;
   cursor: pointer;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
-  margin-bottom: 6px;
+  margin: 0 auto 6px;
 }
-.star-slider-bg {
+.star-slider-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
-  gap: 4px;
-  justify-content: center;
-  font-size: 40px;
-  line-height: 1;
-  color: rgba(255,255,255,0.15);
-  pointer-events: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
 }
-[data-theme="light"] .star-slider-bg {
-  color: rgba(0,0,0,0.12);
+.star-slider-track svg {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
 }
-.star-slider-fill {
+.star-slider-track.bg svg { fill: rgba(255,255,255,0.12); }
+[data-theme="light"] .star-slider-track.bg svg { fill: rgba(0,0,0,0.12); }
+.star-slider-track.fill {
   position: absolute;
   top: 0;
   left: 0;
   height: 100%;
   overflow: hidden;
-  display: flex;
-  gap: 4px;
-  justify-content: center;
-  font-size: 40px;
-  line-height: 1;
-  color: var(--gold);
-  pointer-events: none;
   width: 0%;
 }
-.star-slider-input {
+.star-slider-track.fill svg { fill: var(--gold); }
+.star-slider-hitarea {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  opacity: 0;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  margin: 0;
+  z-index: 2;
 }
 
 .rating-value {
@@ -2121,9 +2116,21 @@ body {
       <div class="rating-big-value" id="ratingBigValue">0.0</div>
       <div class="rating-big-label">/ 5</div>
       <div class="star-slider-wrap" id="starSliderWrap">
-        <div class="star-slider-bg">★★★★★</div>
-        <div class="star-slider-fill" id="starSliderFill">★★★★★</div>
-        <input type="range" class="star-slider-input" id="ratingSlider" min="0" max="5" step="0.1" value="0">
+        <div class="star-slider-track bg">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+        </div>
+        <div class="star-slider-track fill" id="starSliderFill">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+        </div>
+        <div class="star-slider-hitarea" id="starSliderHit"></div>
       </div>
     </div>
     <div class="rating-value" id="ratingValueLabel"></div>
@@ -3125,27 +3132,57 @@ fabMain.addEventListener('click', () => {
 // ============================================================
 const sheetBackdrop = document.getElementById('sheetBackdrop');
 const ratingSheet = document.getElementById('ratingSheet');
-const ratingSlider = document.getElementById('ratingSlider');
 const ratingBigValue = document.getElementById('ratingBigValue');
 const starSliderFill = document.getElementById('starSliderFill');
+const starSliderHit = document.getElementById('starSliderHit');
+const starSliderWrap = document.getElementById('starSliderWrap');
 
 function updateSliderDisplay(value) {
   const pct = (value / 5) * 100;
-  // Fill the star overlay proportionally
   if (starSliderFill) starSliderFill.style.width = `${pct}%`;
   ratingBigValue.textContent = parseFloat(value).toFixed(1);
   const label = document.getElementById('ratingValueLabel');
   if (value > 0) {
     label.textContent = `${parseFloat(value).toFixed(1)} / 5`;
   } else {
-    label.textContent = 'Slide across the stars to rate';
+    label.textContent = 'Drag across the stars';
   }
 }
 
-ratingSlider.addEventListener('input', (e) => {
-  state.selectedStars = parseFloat(e.target.value);
+function getRatingFromX(clientX) {
+  const rect = starSliderWrap.getBoundingClientRect();
+  const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+  const raw = (x / rect.width) * 5;
+  return Math.round(raw * 10) / 10; // 0.1 increments
+}
+
+let starDragging = false;
+
+starSliderHit.addEventListener('mousedown', (e) => {
+  starDragging = true;
+  state.selectedStars = getRatingFromX(e.clientX);
   updateSliderDisplay(state.selectedStars);
 });
+document.addEventListener('mousemove', (e) => {
+  if (starDragging) {
+    state.selectedStars = getRatingFromX(e.clientX);
+    updateSliderDisplay(state.selectedStars);
+  }
+});
+document.addEventListener('mouseup', () => { starDragging = false; });
+
+starSliderHit.addEventListener('touchstart', (e) => {
+  starDragging = true;
+  state.selectedStars = getRatingFromX(e.touches[0].clientX);
+  updateSliderDisplay(state.selectedStars);
+}, { passive: true });
+starSliderHit.addEventListener('touchmove', (e) => {
+  if (starDragging) {
+    state.selectedStars = getRatingFromX(e.touches[0].clientX);
+    updateSliderDisplay(state.selectedStars);
+  }
+}, { passive: true });
+starSliderHit.addEventListener('touchend', () => { starDragging = false; });
 
 function openRatingSheet(movie) {
   state.sheetMovie = movie;
@@ -3161,7 +3198,7 @@ function openRatingSheet(movie) {
       <div class="sheet-subtitle">${movie.year || ''} &middot; ${(movie.genres || []).join(', ')}</div>
     </div>`;
 
-  ratingSlider.value = 0;
+  state.selectedStars = 0;
   updateSliderDisplay(0);
   document.getElementById('reviewInput').value = '';
 
