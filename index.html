@@ -2345,9 +2345,10 @@ async function loadMoreMovies(filters) {
   try {
     currentDiscoverPage++;
     const newMovies = await TMDB.fetchPage(currentDiscoverPage, filters);
-    // Deduplicate by id
+    // Deduplicate by id + filter out already-swiped movies
     const existingIds = new Set(MOVIES.map(m => m.id));
-    const unique = newMovies.filter(m => !existingIds.has(m.id));
+    const seenSet = new Set(state.seenMovieIds);
+    const unique = newMovies.filter(m => !existingIds.has(m.id) && !seenSet.has(m.id));
     MOVIES.push(...unique);
   } catch (e) {
     console.error('Failed to load movies from TMDB:', e);
@@ -2399,6 +2400,7 @@ let state = {
   rightSwipeCount: 0,
   pendingRecommendation: null,
   expandedGenres: {},
+  seenMovieIds: [],
 };
 
 // Load from localStorage
@@ -2418,6 +2420,7 @@ try {
     state.lastSwiped = saved.lastSwiped || null;
     state.rightSwipeCount = saved.rightSwipeCount || 0;
     state.expandedGenres = saved.expandedGenres || {};
+    state.seenMovieIds = saved.seenMovieIds || [];
   }
 } catch(e) {}
 
@@ -2437,8 +2440,15 @@ function saveState() {
       lastSwiped: state.lastSwiped,
       rightSwipeCount: state.rightSwipeCount,
       expandedGenres: state.expandedGenres,
+      seenMovieIds: state.seenMovieIds,
     }));
   } catch(e) {}
+}
+
+function markMovieAsSeen(movieId) {
+  if (!state.seenMovieIds.includes(movieId)) {
+    state.seenMovieIds.push(movieId);
+  }
 }
 
 // ============================================================
@@ -2686,6 +2696,7 @@ function setupSwipeGesture(card) {
       card.style.opacity = '0';
 
       const swipedMovie = MOVIES[state.currentIndex];
+      markMovieAsSeen(swipedMovie.id);
       setTimeout(() => {
         openRatingSheet(swipedMovie);
         renderCard(state.currentIndex, true);
@@ -2714,6 +2725,7 @@ function setupSwipeGesture(card) {
       }
 
       state.lastSwiped = { movie: swipedMovie, direction: direction > 0 ? 'right' : 'left', previousIndex: prevIndex, previousSwipedCount: prevSwipedCount };
+      markMovieAsSeen(swipedMovie.id);
       state.swipedCount++;
       state.currentIndex++;
       saveState();
@@ -2775,6 +2787,7 @@ function swipeCardProgrammatic(direction) {
   }
 
   state.lastSwiped = { movie: swipedMovie, direction: direction > 0 ? 'right' : 'left', previousIndex: prevIndex, previousSwipedCount: prevSwipedCount };
+  markMovieAsSeen(swipedMovie.id);
   state.swipedCount++;
   state.currentIndex++;
   saveState();
@@ -3225,6 +3238,7 @@ document.getElementById('sheetSubmit').addEventListener('click', () => {
   closeRatingSheet();
 
   if (MOVIES[state.currentIndex] && MOVIES[state.currentIndex].id === state.sheetMovie.id) {
+    markMovieAsSeen(state.sheetMovie.id);
     state.swipedCount++;
     state.currentIndex++;
     saveState();
