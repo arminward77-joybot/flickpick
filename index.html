@@ -2617,34 +2617,43 @@ function setupSwipeGesture(card) {
     if (!isDragging) return;
     const dx = x - startX;
     const dy = y - startY;
-    rawDeltaY = dy;
 
-    // Determine swipe direction after a small movement
-    if (!swipeDirection && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
-      swipeDirection = Math.abs(dy) > Math.abs(dx) && dy < 0 ? 'vertical' : 'horizontal';
-    }
+    // Free movement — card follows finger naturally in all directions
+    currentX = dx;
+    currentY = dy;
+    const rotation = currentX * ROTATION_FACTOR;
+    card.style.transform = `translateX(${currentX}px) translateY(${currentY}px) rotate(${rotation}deg)`;
 
-    if (swipeDirection === 'vertical') {
-      currentY = Math.min(0, dy); // only allow upward
-      currentX = 0;
-      card.style.transform = `translateY(${currentY}px)`;
-      const upProgress = Math.min(Math.abs(currentY) / SWIPE_UP_THRESHOLD, 1);
+    // Overlay logic based on dominant direction
+    const absX = Math.abs(currentX);
+    const absY = Math.abs(currentY);
+    const isUpward = currentY < 0;
+
+    // Swipe up → WATCHED overlay
+    if (isUpward && absY > absX) {
+      const upProgress = Math.min(absY / SWIPE_UP_THRESHOLD, 1);
       if (overlayWatched) overlayWatched.style.opacity = upProgress;
       if (overlayLike) overlayLike.style.opacity = 0;
       if (overlayNope) overlayNope.style.opacity = 0;
-    } else {
-      currentX = dx;
-      currentY = dy * 0.3;
-      const rotation = currentX * ROTATION_FACTOR;
-      card.style.transform = `translateX(${currentX}px) translateY(${currentY}px) rotate(${rotation}deg)`;
-      const progress = Math.min(Math.abs(currentX) / SWIPE_THRESHOLD, 1);
-      if (currentX > 0) {
-        overlayLike.style.opacity = progress;
-        overlayNope.style.opacity = 0;
-      } else {
-        overlayNope.style.opacity = progress;
-        overlayLike.style.opacity = 0;
-      }
+    }
+    // Swipe right → SAVE overlay
+    else if (currentX > 0 && absX > absY) {
+      const progress = Math.min(absX / SWIPE_THRESHOLD, 1);
+      if (overlayLike) overlayLike.style.opacity = progress;
+      if (overlayNope) overlayNope.style.opacity = 0;
+      if (overlayWatched) overlayWatched.style.opacity = 0;
+    }
+    // Swipe left → NOPE overlay
+    else if (currentX < 0 && absX > absY) {
+      const progress = Math.min(absX / SWIPE_THRESHOLD, 1);
+      if (overlayNope) overlayNope.style.opacity = progress;
+      if (overlayLike) overlayLike.style.opacity = 0;
+      if (overlayWatched) overlayWatched.style.opacity = 0;
+    }
+    // Neutral / swiping down — clear all overlays
+    else {
+      if (overlayLike) overlayLike.style.opacity = 0;
+      if (overlayNope) overlayNope.style.opacity = 0;
       if (overlayWatched) overlayWatched.style.opacity = 0;
     }
   }
@@ -2654,10 +2663,16 @@ function setupSwipeGesture(card) {
     isDragging = false;
     state.isDragging = false;
 
-    // Swipe UP → WATCHED
-    if (swipeDirection === 'vertical' && Math.abs(currentY) > SWIPE_UP_THRESHOLD) {
+    const absX = Math.abs(currentX);
+    const absY = Math.abs(currentY);
+    const isUpward = currentY < 0;
+
+    // Determine dominant action
+    // Swipe UP → WATCHED (if upward is dominant and past threshold)
+    if (isUpward && absY > absX && absY > SWIPE_UP_THRESHOLD) {
       card.classList.add('animating');
-      card.style.transform = `translateY(-${window.innerHeight + 200}px)`;
+      // Fly up and slightly in the horizontal direction for natural feel
+      card.style.transform = `translateX(${currentX * 1.5}px) translateY(-${window.innerHeight + 200}px) rotate(${currentX * 0.1}deg)`;
       card.style.opacity = '0';
 
       const swipedMovie = MOVIES[state.currentIndex];
@@ -2666,11 +2681,12 @@ function setupSwipeGesture(card) {
         renderCard(state.currentIndex, true);
       }, 350);
 
-      currentX = 0; currentY = 0; rawDeltaY = 0; swipeDirection = null;
+      currentX = 0; currentY = 0;
       return;
     }
 
-    if (swipeDirection !== 'vertical' && Math.abs(currentX) > SWIPE_THRESHOLD) {
+    // Swipe LEFT/RIGHT → NOPE/SAVE
+    if (absX > absY && absX > SWIPE_THRESHOLD) {
       const direction = currentX > 0 ? 1 : -1;
       const flyX = direction * (window.innerWidth + 200);
       const flyRotation = direction * 30;
@@ -2694,6 +2710,7 @@ function setupSwipeGesture(card) {
 
       setTimeout(() => { renderCard(state.currentIndex, true); updateRewindBtn(); checkRecommendation(); }, 350);
     } else {
+      // Snap back
       card.classList.add('animating');
       card.style.transform = 'translateX(0) translateY(0) rotate(0deg)';
       if (overlayLike) overlayLike.style.opacity = 0;
@@ -2702,8 +2719,6 @@ function setupSwipeGesture(card) {
     }
     currentX = 0;
     currentY = 0;
-    rawDeltaY = 0;
-    swipeDirection = null;
   }
 
   function isInteractive(el) {
@@ -3420,42 +3435,51 @@ function setupSwipeGestureRec(card, movie, resumeIndex) {
   const overlayNope = card.querySelector('#overlayNope');
   const overlayWatched = card.querySelector('#overlayWatched');
 
-  function onStart(x, y) { isDragging = true; state.isDragging = true; startX = x; startY = y; swipeDirection = null; card.style.transition = 'none'; card.classList.remove('entering'); }
+  function onStart(x, y) { isDragging = true; state.isDragging = true; startX = x; startY = y; card.style.transition = 'none'; card.classList.remove('entering'); }
   function onMove(x, y) {
     if (!isDragging) return;
-    const dx = x - startX; const dy = y - startY;
-    if (!swipeDirection && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
-      swipeDirection = Math.abs(dy) > Math.abs(dx) && dy < 0 ? 'vertical' : 'horizontal';
-    }
-    if (swipeDirection === 'vertical') {
-      currentY = Math.min(0, dy); currentX = 0;
-      card.style.transform = `translateY(${currentY}px)`;
-      const upProgress = Math.min(Math.abs(currentY) / SWIPE_UP_THRESHOLD, 1);
-      if (overlayWatched) overlayWatched.style.opacity = upProgress;
+    currentX = x - startX; currentY = y - startY;
+    const rotation = currentX * 0.08;
+    card.style.transform = `translateX(${currentX}px) translateY(${currentY}px) rotate(${rotation}deg)`;
+
+    const absX = Math.abs(currentX); const absY = Math.abs(currentY);
+    const isUpward = currentY < 0;
+
+    if (isUpward && absY > absX) {
+      const p = Math.min(absY / SWIPE_UP_THRESHOLD, 1);
+      if (overlayWatched) overlayWatched.style.opacity = p;
       if (overlayLike) overlayLike.style.opacity = 0;
       if (overlayNope) overlayNope.style.opacity = 0;
+    } else if (currentX > 0 && absX > absY) {
+      if (overlayLike) overlayLike.style.opacity = Math.min(absX / 100, 1);
+      if (overlayNope) overlayNope.style.opacity = 0;
+      if (overlayWatched) overlayWatched.style.opacity = 0;
+    } else if (currentX < 0 && absX > absY) {
+      if (overlayNope) overlayNope.style.opacity = Math.min(absX / 100, 1);
+      if (overlayLike) overlayLike.style.opacity = 0;
+      if (overlayWatched) overlayWatched.style.opacity = 0;
     } else {
-      currentX = dx; currentY = dy * 0.3;
-      card.style.transform = `translateX(${currentX}px) translateY(${currentY}px) rotate(${currentX * 0.08}deg)`;
-      const progress = Math.min(Math.abs(currentX) / 100, 1);
-      if (currentX > 0) { overlayLike.style.opacity = progress; overlayNope.style.opacity = 0; }
-      else { overlayNope.style.opacity = progress; overlayLike.style.opacity = 0; }
+      if (overlayLike) overlayLike.style.opacity = 0;
+      if (overlayNope) overlayNope.style.opacity = 0;
       if (overlayWatched) overlayWatched.style.opacity = 0;
     }
   }
   function onEnd() {
     if (!isDragging) return;
     isDragging = false; state.isDragging = false;
-    if (swipeDirection === 'vertical' && Math.abs(currentY) > SWIPE_UP_THRESHOLD) {
+    const absX = Math.abs(currentX); const absY = Math.abs(currentY);
+    const isUpward = currentY < 0;
+
+    if (isUpward && absY > absX && absY > SWIPE_UP_THRESHOLD) {
       card.classList.add('animating');
-      card.style.transform = `translateY(-${window.innerHeight + 200}px)`;
+      card.style.transform = `translateX(${currentX * 1.5}px) translateY(-${window.innerHeight + 200}px) rotate(${currentX * 0.1}deg)`;
       card.style.opacity = '0';
       state.pendingRecommendation = null;
       saveState();
       setTimeout(() => { openRatingSheet(movie); renderCard(resumeIndex, true); }, 350);
-      currentX = 0; currentY = 0; swipeDirection = null; return;
+      currentX = 0; currentY = 0; return;
     }
-    if (swipeDirection !== 'vertical' && Math.abs(currentX) > 100) {
+    if (absX > absY && absX > 100) {
       const direction = currentX > 0 ? 1 : -1;
       card.classList.add('animating');
       card.style.transform = `translateX(${direction * (window.innerWidth + 200)}px) translateY(${currentY}px) rotate(${direction * 30}deg)`;
@@ -3471,7 +3495,7 @@ function setupSwipeGestureRec(card, movie, resumeIndex) {
       if (overlayNope) overlayNope.style.opacity = 0;
       if (overlayWatched) overlayWatched.style.opacity = 0;
     }
-    currentX = 0; currentY = 0; swipeDirection = null;
+    currentX = 0; currentY = 0;
   }
   function isInteractive(el) { return el.closest('.card-info') || el.closest('.fab-container') || el.closest('.card-share-btn'); }
   card.addEventListener('mousedown', e => { if (isInteractive(e.target)) return; e.preventDefault(); onStart(e.clientX, e.clientY); });
