@@ -238,33 +238,9 @@ body {
   padding: 0;
   overflow: hidden;
 }
-.progress-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 20px 0;
-  gap: 8px;
-}
-.progress-text {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-.progress-track {
-  flex: 1;
-  height: 3px;
-  background: rgba(255,255,255,0.06);
-  border-radius: 2px;
-  overflow: hidden;
-}
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), #ff6b8a);
-  border-radius: 2px;
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* progress bar removed */
 
-/* Mood Pills */
+/* Mood Pills — swipeable horizontal row */
 .mood-row {
   display: flex;
   gap: 8px;
@@ -273,8 +249,11 @@ body {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   flex-shrink: 0;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
 }
 .mood-row::-webkit-scrollbar { display: none; }
+.mood-pill { scroll-snap-align: start; }
 .mood-pill {
   flex-shrink: 0;
   padding: 6px 14px;
@@ -409,7 +388,11 @@ body {
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
+.movie-card::-webkit-scrollbar { display: none; }
+.movie-card { scrollbar-width: none; }
 .movie-card.animating {
   transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1), opacity 0.35s ease;
 }
@@ -481,7 +464,7 @@ body {
 .card-poster-placeholder {
   width: calc(100% - 24px);
   margin: 0 auto;
-  aspect-ratio: 27/32;
+  aspect-ratio: 2/3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -495,20 +478,41 @@ body {
 .card-poster-img {
   width: calc(100% - 24px);
   margin: 0 auto;
-  height: 460px;
-  max-height: 62%;
+  aspect-ratio: 2/3;
   object-fit: cover;
   object-position: center top;
   border-radius: var(--radius);
   flex-shrink: 0;
   display: block;
 }
+/* Share button on poster */
+.card-share-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #fff;
+  cursor: pointer;
+  z-index: 5;
+  border: 1px solid rgba(255,255,255,0.15);
+  transition: transform 0.15s, background 0.15s;
+}
+.card-share-btn:active { transform: scale(0.9); background: rgba(0,0,0,0.8); }
 .card-streaming-row {
   display: flex;
   gap: 8px;
   padding: 0 16px;
   flex-wrap: wrap;
-  margin-top: -20px;
+  margin-top: 8px;
   position: relative;
   z-index: 3;
 }
@@ -1839,9 +1843,6 @@ body {
       <div class="filter-section-label">Genre</div>
       <div class="filter-chips" id="filterGenreChips"></div>
 
-      <div class="filter-section-label">Streaming Service</div>
-      <div class="filter-chips" id="filterStreamChips"></div>
-
       <div class="filter-section-label">Year Range</div>
       <div class="filter-year-row">
         <input class="filter-year-input" id="filterYearMin" type="number" placeholder="1980" min="1900" max="2030">
@@ -1852,13 +1853,6 @@ body {
       <div class="filter-actions">
         <button class="filter-clear-btn" id="filterClearBtn">Clear All</button>
         <button class="filter-apply-btn" id="filterApplyBtn">Apply Filters</button>
-      </div>
-    </div>
-
-    <div class="progress-bar">
-      <span class="progress-text" id="progressText">1 of 100</span>
-      <div class="progress-track">
-        <div class="progress-fill" id="progressFill" style="width: 3.3%"></div>
       </div>
     </div>
 
@@ -2091,13 +2085,9 @@ body {
         <span class="fab-option-label">Mark as Watched</span>
         <span class="fab-option-icon">&#128065;</span>
       </div>
-      <div class="fab-option" id="fabShare">
-        <span class="fab-option-label">Share</span>
-        <span class="fab-option-icon">&#8599;</span>
-      </div>
       <div class="fab-option" id="fabSave">
-        <span class="fab-option-label">Save to Session</span>
-        <span class="fab-option-icon">&#128204;</span>
+        <span class="fab-option-label">Seen</span>
+        <span class="fab-option-icon">&#128065;</span>
       </div>
     </div>
     <div class="fab-main" id="fabMain">+</div>
@@ -2421,6 +2411,24 @@ tabItems.forEach(tab => {
 const cardContainer = document.getElementById('cardContainer');
 const endScreen = document.getElementById('endScreen');
 
+function buildStreamingBadges(movie) {
+  if (movie._detailsLoaded && (!movie.streaming || movie.streaming.length === 0)) {
+    return '<span class="stream-badge" style="background:#555;font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff">For Digital Rent or Purchase</span>';
+  }
+  return (movie.streaming || []).map(s =>
+    `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'}">${s}</span>`
+  ).join('');
+}
+
+function shareMovie(movie) {
+  const url = `https://www.themoviedb.org/movie/${movie._tmdbId || movie.id}`;
+  if (navigator.share) {
+    navigator.share({ title: movie.title, text: `Check out ${movie.title} on FlickPick!`, url: url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(() => showToast('TMDB link copied!', 'info')).catch(() => showToast('Could not copy link', 'info'));
+  }
+}
+
 function renderCard(index, animate = false) {
   if (state.pendingRecommendation) {
     renderRecommendationCard(state.pendingRecommendation, index, animate);
@@ -2445,13 +2453,11 @@ function renderCard(index, animate = false) {
     }
     cardContainer.innerHTML = '';
     endScreen.classList.add('active');
-    document.querySelector('.progress-bar').style.display = 'none';
     document.getElementById('fabContainer').style.display = 'none';
     return;
   }
 
   endScreen.classList.remove('active');
-  document.querySelector('.progress-bar').style.display = 'flex';
   document.getElementById('fabContainer').style.display = 'block';
 
   // Sync mood pills
@@ -2461,9 +2467,7 @@ function renderCard(index, animate = false) {
 
   const movie = MOVIES[index];
 
-  const streamingRow = (movie.streaming || []).map(s =>
-    `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'}">${s}</span>`
-  ).join('');
+  const streamingRow = buildStreamingBadges(movie);
 
   const posterHTML = movie.poster
     ? `<img class="card-poster-img" src="${movie.poster}" alt="${movie.title}" draggable="false" referrerpolicy="no-referrer">`
@@ -2475,6 +2479,7 @@ function renderCard(index, animate = false) {
     <div class="movie-card ${animate ? 'entering' : ''}" id="activeCard">
       <div class="card-poster-wrapper">
         ${posterHTML}
+        <div class="card-share-btn" id="cardShareBtn">&#8599;</div>
       </div>
       <div class="card-streaming-row">${streamingRow}</div>
       <div class="card-info" id="cardInfoTap">
@@ -2490,11 +2495,16 @@ function renderCard(index, animate = false) {
     </div>
   `;
 
-  const total = MOVIES.length;
-  document.getElementById('progressText').textContent = `${index + 1} of ${total}+`;
-  document.getElementById('progressFill').style.width = `${((index + 1) / Math.max(total, 1)) * 100}%`;
-
   setupSwipeGesture(document.getElementById('activeCard'));
+
+  // Share button on poster
+  const shareBtn = document.getElementById('cardShareBtn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      shareMovie(movie);
+    });
+  }
 
   const infoArea = document.getElementById('cardInfoTap');
   if (infoArea) {
@@ -2512,9 +2522,7 @@ function renderCard(index, animate = false) {
       if (MOVIES[state.currentIndex] && MOVIES[state.currentIndex].id === movie.id) {
         const streamRow = document.querySelector('.card-streaming-row');
         if (streamRow) {
-          streamRow.innerHTML = (movie.streaming || []).map(s =>
-            `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'}">${s}</span>`
-          ).join('');
+          streamRow.innerHTML = buildStreamingBadges(movie);
         }
       }
     }).catch(() => {});
@@ -2598,7 +2606,7 @@ function setupSwipeGesture(card) {
   }
 
   function isInteractive(el) {
-    return el.closest('.card-info') || el.closest('.fab-container');
+    return el.closest('.card-info') || el.closest('.fab-container') || el.closest('.card-share-btn');
   }
 
   card.addEventListener('mousedown', e => {
@@ -2898,9 +2906,16 @@ function renderDetailContent(movie) {
 
   const genreChips = (movie.genres || []).map(g => `<span class="detail-genre-chip">${g}</span>`).join('');
 
-  const streamBadges = (movie.streaming || []).map(s =>
-    `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'};font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff;letter-spacing:0.3px">${s}</span>`
-  ).join('') || '<span style="font-size:12px;color:var(--text-muted)">Loading streaming info...</span>';
+  let streamBadges;
+  if (movie._detailsLoaded && (!movie.streaming || movie.streaming.length === 0)) {
+    streamBadges = '<span class="stream-badge" style="background:#555;font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff;letter-spacing:0.3px">For Digital Rent or Purchase</span>';
+  } else if (movie.streaming && movie.streaming.length > 0) {
+    streamBadges = (movie.streaming || []).map(s =>
+      `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'};font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff;letter-spacing:0.3px">${s}</span>`
+    ).join('');
+  } else {
+    streamBadges = '<span style="font-size:12px;color:var(--text-muted)">Loading streaming info...</span>';
+  }
 
   const castHTML = (movie.cast || []).map(c => {
     const castInitial = c.name.split(' ').map(n => n[0]).join('');
@@ -2987,23 +3002,10 @@ document.getElementById('fabWatched').addEventListener('click', () => {
   }
 });
 
-document.getElementById('fabShare').addEventListener('click', () => {
-  closeFab();
-  if (state.currentIndex < MOVIES.length) {
-    const m = MOVIES[state.currentIndex];
-    const url = `https://www.themoviedb.org/movie/${m._tmdbId || m.id}`;
-    if (navigator.share) {
-      navigator.share({ title: m.title, text: `Check out ${m.title} on FlickPick!`, url: url }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(url).then(() => showToast('TMDB link copied!', 'info')).catch(() => showToast('Could not copy link', 'info'));
-    }
-  }
-});
-
 document.getElementById('fabSave').addEventListener('click', () => {
   closeFab();
   if (state.currentIndex < MOVIES.length) {
-    addToWatchlist(MOVIES[state.currentIndex]);
+    openRatingSheet(MOVIES[state.currentIndex]);
   }
 });
 
@@ -3294,12 +3296,9 @@ function checkRecommendation() {
 function renderRecommendationCard(rec, resumeIndex, animate = false) {
   const movie = rec.movie;
   endScreen.classList.remove('active');
-  document.querySelector('.progress-bar').style.display = 'flex';
   document.getElementById('fabContainer').style.display = 'block';
 
-  const streamingRow = (movie.streaming || []).map(s =>
-    `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'}">${s}</span>`
-  ).join('');
+  const streamingRow = buildStreamingBadges(movie);
 
   const posterHTML = movie.poster
     ? `<img class="card-poster-img" src="${movie.poster}" alt="${movie.title}" draggable="false" referrerpolicy="no-referrer">`
@@ -3308,7 +3307,10 @@ function renderRecommendationCard(rec, resumeIndex, animate = false) {
   cardContainer.innerHTML = `
     <div class="movie-card recommended ${animate ? 'entering' : ''}" id="activeCard">
       <div class="recommended-badge">✨ Because You Liked</div>
-      <div class="card-poster-wrapper">${posterHTML}</div>
+      <div class="card-poster-wrapper">
+        ${posterHTML}
+        <div class="card-share-btn" id="cardShareBtn">&#8599;</div>
+      </div>
       <div class="card-streaming-row">${streamingRow}</div>
       <div class="card-info" id="cardInfoTap">
         <span class="card-title">${movie.title}</span><span class="card-year-inline">${movie.year || ''}</span>
@@ -3323,10 +3325,15 @@ function renderRecommendationCard(rec, resumeIndex, animate = false) {
       <div class="swipe-overlay nope" id="overlayNope">NOPE</div>
     </div>`;
 
-  document.getElementById('progressText').textContent = '⭐ Recommended for you';
-  document.getElementById('progressFill').style.width = `${((resumeIndex + 1) / Math.max(MOVIES.length, 1)) * 100}%`;
-
   setupSwipeGestureRec(document.getElementById('activeCard'), movie, resumeIndex);
+
+  const shareBtn = document.getElementById('cardShareBtn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      shareMovie(movie);
+    });
+  }
 
   const infoArea = document.getElementById('cardInfoTap');
   if (infoArea) {
@@ -3372,7 +3379,7 @@ function setupSwipeGestureRec(card, movie, resumeIndex) {
     }
     currentX = 0; currentY = 0;
   }
-  function isInteractive(el) { return el.closest('.card-info') || el.closest('.fab-container'); }
+  function isInteractive(el) { return el.closest('.card-info') || el.closest('.fab-container') || el.closest('.card-share-btn'); }
   card.addEventListener('mousedown', e => { if (isInteractive(e.target)) return; e.preventDefault(); onStart(e.clientX, e.clientY); });
   document.addEventListener('mousemove', e => { if (isDragging) { e.preventDefault(); onMove(e.clientX, e.clientY); } });
   document.addEventListener('mouseup', () => { if (isDragging) onEnd(); });
@@ -3416,31 +3423,19 @@ function initFilterPanel() {
     });
   }
 
-  // Streaming chips
-  const streamChips = document.getElementById('filterStreamChips');
-  if (streamChips) {
-    streamChips.innerHTML = STREAMING_SERVICES.map(s =>
-      `<div class="filter-chip ${(state.filters.streaming || []).includes(s.name) ? 'active' : ''}" data-stream="${s.name}">${s.name}</div>`
-    ).join('');
-    streamChips.querySelectorAll('.filter-chip').forEach(chip => {
-      chip.addEventListener('click', () => chip.classList.toggle('active'));
-    });
-  }
-
   const yearMin = document.getElementById('filterYearMin');
   const yearMax = document.getElementById('filterYearMax');
   if (yearMin) yearMin.value = state.filters.yearMin || '';
   if (yearMax) yearMax.value = state.filters.yearMax || '';
 
   document.getElementById('filterClearBtn').addEventListener('click', () => {
-    document.querySelectorAll('#filterGenreChips .filter-chip, #filterStreamChips .filter-chip').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#filterGenreChips .filter-chip').forEach(c => c.classList.remove('active'));
     if (yearMin) yearMin.value = '';
     if (yearMax) yearMax.value = '';
   });
 
   document.getElementById('filterApplyBtn').addEventListener('click', async () => {
     state.filters.genres = [...document.querySelectorAll('#filterGenreChips .filter-chip.active')].map(c => c.dataset.genre);
-    state.filters.streaming = [...document.querySelectorAll('#filterStreamChips .filter-chip.active')].map(c => c.dataset.stream);
     const yearMin = document.getElementById('filterYearMin');
     const yearMax = document.getElementById('filterYearMax');
     state.filters.yearMin = yearMin && yearMin.value ? parseInt(yearMin.value) : null;
