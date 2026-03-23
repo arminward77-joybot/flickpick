@@ -62,7 +62,7 @@
 [data-theme="light"] .rating-big-value { color: #b8860b; }
 [data-theme="light"] .wl-stars { color: #b8860b; }
 [data-theme="light"] .top-movie-stars { color: #b8860b; }
-[data-theme="light"] .rating-slider::-webkit-slider-thumb { border-color: #333; }
+[data-theme="light"] .star-slider-bg { color: rgba(0,0,0,0.15); }
 [data-theme="light"] .sheet-handle { background: rgba(0,0,0,0.15); }
 [data-theme="light"] .card-streaming-row { background: rgba(0,0,0,0.6); }
 
@@ -468,8 +468,7 @@ body {
   display: block;
 }
 .card-poster-placeholder {
-  width: calc(100% - 24px);
-  margin: 0 auto;
+  width: 100%;
   aspect-ratio: 2/3;
   display: flex;
   align-items: center;
@@ -478,16 +477,13 @@ body {
   font-weight: 800;
   color: rgba(255,255,255,0.15);
   letter-spacing: -2px;
-  border-radius: var(--radius);
   flex-shrink: 0;
 }
 .card-poster-img {
-  width: calc(100% - 24px);
-  margin: 0 auto;
+  width: 100%;
   aspect-ratio: 2/3;
   object-fit: cover;
   object-position: center top;
-  border-radius: var(--radius);
   flex-shrink: 0;
   display: block;
 }
@@ -824,9 +820,9 @@ body {
 .swipe-overlay.watched {
   left: 50%;
   transform: translateX(-50%) rotate(0deg);
-  color: var(--gold);
-  border-color: var(--gold);
-  background: var(--gold-bg);
+  color: #00e5ff;
+  border-color: #00e5ff;
+  background: rgba(0, 229, 255, 0.12);
   top: 30%;
   font-size: 32px;
   letter-spacing: 4px;
@@ -993,39 +989,59 @@ body {
   margin-bottom: 14px;
   font-weight: 500;
 }
-.rating-slider {
-  -webkit-appearance: none;
-  appearance: none;
+
+/* Star slider — 5 stars that fill continuously as user drags */
+.star-slider-wrap {
+  position: relative;
   width: 100%;
-  height: 8px;
-  border-radius: 4px;
-  background: linear-gradient(to right, var(--gold) 0%, var(--gold) 0%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.12) 100%);
-  outline: none;
+  max-width: 280px;
+  height: 48px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
   margin-bottom: 6px;
 }
-.rating-slider::-webkit-slider-thumb {
+.star-slider-bg {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  font-size: 40px;
+  line-height: 1;
+  color: rgba(255,255,255,0.15);
+  pointer-events: none;
+}
+[data-theme="light"] .star-slider-bg {
+  color: rgba(0,0,0,0.12);
+}
+.star-slider-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  font-size: 40px;
+  line-height: 1;
+  color: var(--gold);
+  pointer-events: none;
+  width: 0%;
+}
+.star-slider-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--gold);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  border: 3px solid #fff;
+  margin: 0;
 }
-.rating-slider::-moz-range-thumb {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--gold);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  border: 3px solid #fff;
-}
-[data-theme="light"] .rating-slider {
-  background: linear-gradient(to right, var(--gold) 0%, var(--gold) 0%, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.12) 100%);
-}
+
 .rating-value {
   text-align: center;
   font-size: 14px;
@@ -2099,7 +2115,11 @@ body {
     <div class="rating-slider-container">
       <div class="rating-big-value" id="ratingBigValue">0.0</div>
       <div class="rating-big-label">/ 5</div>
-      <input type="range" class="rating-slider" id="ratingSlider" min="0" max="5" step="0.1" value="0">
+      <div class="star-slider-wrap" id="starSliderWrap">
+        <div class="star-slider-bg">★★★★★</div>
+        <div class="star-slider-fill" id="starSliderFill">★★★★★</div>
+        <input type="range" class="star-slider-input" id="ratingSlider" min="0" max="5" step="0.1" value="0">
+      </div>
     </div>
     <div class="rating-value" id="ratingValueLabel"></div>
     <textarea class="review-input" id="reviewInput" rows="3" placeholder="Write a review (optional)..."></textarea>
@@ -3077,16 +3097,18 @@ const sheetBackdrop = document.getElementById('sheetBackdrop');
 const ratingSheet = document.getElementById('ratingSheet');
 const ratingSlider = document.getElementById('ratingSlider');
 const ratingBigValue = document.getElementById('ratingBigValue');
+const starSliderFill = document.getElementById('starSliderFill');
 
 function updateSliderDisplay(value) {
   const pct = (value / 5) * 100;
-  ratingSlider.style.background = `linear-gradient(to right, var(--gold) 0%, var(--gold) ${pct}%, rgba(${document.documentElement.getAttribute('data-theme') === 'light' ? '0,0,0,0.12' : '255,255,255,0.12'}) ${pct}%, rgba(${document.documentElement.getAttribute('data-theme') === 'light' ? '0,0,0,0.12' : '255,255,255,0.12'}) 100%)`;
+  // Fill the star overlay proportionally
+  if (starSliderFill) starSliderFill.style.width = `${pct}%`;
   ratingBigValue.textContent = parseFloat(value).toFixed(1);
   const label = document.getElementById('ratingValueLabel');
   if (value > 0) {
     label.textContent = `${parseFloat(value).toFixed(1)} / 5`;
   } else {
-    label.textContent = 'Slide to rate';
+    label.textContent = 'Slide across the stars to rate';
   }
 }
 
