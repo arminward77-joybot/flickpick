@@ -395,7 +395,8 @@ body {
   will-change: transform;
   transition: none;
   background: var(--bg-primary);
-  display: block;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 .movie-card.animating {
@@ -458,8 +459,9 @@ body {
 
 .card-poster-wrapper {
   position: relative;
-  width: 100%;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 .card-poster {
   width: 100%;
@@ -468,9 +470,6 @@ body {
   display: block;
 }
 .card-poster-placeholder {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
   display: flex;
@@ -483,9 +482,6 @@ body {
   flex-shrink: 0;
 }
 .card-poster-img {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
