@@ -241,8 +241,9 @@ body {
   align-items: stretch;
   justify-content: center;
   position: relative;
-  padding: 0;
-  overflow: hidden;
+  padding: 4px 8px 6px;
+  overflow: visible;
+  z-index: 10;
 }
 /* progress bar removed */
 
@@ -251,6 +252,8 @@ body {
   display: flex;
   gap: 8px;
   padding: 0 16px 2px;
+  position: relative;
+  z-index: 1;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -384,7 +387,7 @@ body {
 .movie-card {
   width: 100%;
   height: 100%;
-  border-radius: 0;
+  border-radius: 16px;
   overflow: hidden;
   position: relative;
   cursor: grab;
@@ -2537,13 +2540,13 @@ function renderCard(index, animate = false) {
         ${posterHTML}
         <div class="card-streaming-row">${streamingRow}</div>
         <div class="card-share-btn" id="cardShareBtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></div>
-      </div>
-      <div class="card-info" id="cardInfoTap">
-        <span class="card-title">${movie.title}</span><span class="card-year-inline">${movie.year || ''}</span>
-        <div class="card-synopsis-preview">${movie.synopsis}</div>
-        <div class="card-tap-hint">
-          <span class="tap-arrow">&#9650;</span>
-          <span>Tap for details</span>
+        <div class="card-info" id="cardInfoTap">
+          <span class="card-title">${movie.title}</span><span class="card-year-inline">${movie.year || ''}</span>
+          <div class="card-synopsis-preview">${movie.synopsis}</div>
+          <div class="card-tap-hint">
+            <span class="tap-arrow">&#9650;</span>
+            <span>Tap for details</span>
+          </div>
         </div>
       </div>
       <div class="swipe-overlay like" id="overlayLike">SAVE</div>
@@ -3402,14 +3405,14 @@ function renderRecommendationCard(rec, resumeIndex, animate = false) {
         ${posterHTML}
         <div class="card-streaming-row">${streamingRow}</div>
         <div class="card-share-btn" id="cardShareBtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></div>
-      </div>
-      <div class="card-info" id="cardInfoTap">
-        <span class="card-title">${movie.title}</span><span class="card-year-inline">${movie.year || ''}</span>
-        <span class="rec-reason">Because you liked "${rec.because}"</span>
-        <div class="card-synopsis-preview">${movie.synopsis}</div>
-        <div class="card-tap-hint">
-          <span class="tap-arrow">&#9650;</span>
-          <span>Tap for details</span>
+        <div class="card-info" id="cardInfoTap">
+          <span class="card-title">${movie.title}</span><span class="card-year-inline">${movie.year || ''}</span>
+          <span class="rec-reason">Because you liked "${rec.because}"</span>
+          <div class="card-synopsis-preview">${movie.synopsis}</div>
+          <div class="card-tap-hint">
+            <span class="tap-arrow">&#9650;</span>
+            <span>Tap for details</span>
+          </div>
         </div>
       </div>
       <div class="swipe-overlay like" id="overlayLike">SAVE</div>
