@@ -29,8 +29,8 @@
   --apple: #a2aaad;
   --paramount: #0064ff;
   --peacock: #000000;
-  --tab-height: 70px;
-  --header-height: 56px;
+  --tab-height: 56px;
+  --header-height: 48px;
   --radius: 16px;
   --radius-sm: 10px;
   --shadow: 0 8px 32px rgba(0,0,0,0.4);
@@ -241,7 +241,7 @@ body {
   align-items: stretch;
   justify-content: center;
   position: relative;
-  padding: 4px 8px 6px;
+  padding: 2px 6px;
   overflow: visible;
   z-index: 10;
 }
@@ -395,8 +395,7 @@ body {
   will-change: transform;
   transition: none;
   background: var(--bg-primary);
-  display: flex;
-  flex-direction: column;
+  display: block;
   overflow: hidden;
 }
 .movie-card.animating {
@@ -459,9 +458,8 @@ body {
 
 .card-poster-wrapper {
   position: relative;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  width: 100%;
+  height: 100%;
 }
 .card-poster {
   width: 100%;
@@ -470,8 +468,11 @@ body {
   display: block;
 }
 .card-poster-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  aspect-ratio: 2/3;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -482,6 +483,9 @@ body {
   flex-shrink: 0;
 }
 .card-poster-img {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -515,8 +519,8 @@ body {
   gap: 6px;
   flex-wrap: wrap;
   position: absolute;
-  bottom: 60px;
-  left: 12px;
+  bottom: 70px;
+  left: 10px;
   z-index: 5;
   padding: 6px 8px;
   background: rgba(0,0,0,0.55);
@@ -542,9 +546,9 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 40px 16px 14px;
-  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
-  z-index: 4;
+  padding: 50px 14px 12px;
+  background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.7) 50%, transparent 100%);
+  z-index: 7;
   cursor: pointer;
 }
 .card-title {
@@ -838,8 +842,8 @@ body {
 /* FAB */
 .fab-container {
   position: absolute;
-  bottom: 86px;
-  right: 20px;
+  bottom: 70px;
+  right: 16px;
   z-index: 99;
 }
 .fab-menu {
