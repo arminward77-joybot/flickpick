@@ -2988,6 +2988,10 @@ const detailBody = document.getElementById('detailBody');
 async function openDetailPanel(movie) {
   detailHeaderTitle.textContent = movie.title;
 
+  // Hide FAB so it doesn't block content
+  const fab = document.getElementById('fabContainer');
+  if (fab) fab.style.display = 'none';
+
   // Show immediately with what we have
   renderDetailContent(movie);
   detailOverlay.classList.add('open');
@@ -3091,6 +3095,12 @@ function renderDetailContent(movie) {
 function closeDetailPanel() {
   detailOverlay.classList.remove('open');
   detailPanel.classList.remove('open');
+
+  // Restore FAB if on discover tab
+  if (state.activeTab === 'discover') {
+    const fab = document.getElementById('fabContainer');
+    if (fab) fab.style.display = 'block';
+  }
 }
 
 detailOverlay.addEventListener('click', closeDetailPanel);
