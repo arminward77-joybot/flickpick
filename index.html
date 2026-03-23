@@ -250,7 +250,7 @@ body {
 .mood-row {
   display: flex;
   gap: 8px;
-  padding: 2px 16px 4px;
+  padding: 0 16px 2px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -394,11 +394,8 @@ body {
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
 }
-.movie-card::-webkit-scrollbar { display: none; }
-.movie-card { scrollbar-width: none; }
 .movie-card.animating {
   transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1), opacity 0.35s ease;
 }
@@ -459,7 +456,9 @@ body {
 
 .card-poster-wrapper {
   position: relative;
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 .card-poster {
   width: 100%;
@@ -481,17 +480,16 @@ body {
 }
 .card-poster-img {
   width: 100%;
-  aspect-ratio: 2/3;
+  height: 100%;
   object-fit: cover;
   object-position: center top;
-  flex-shrink: 0;
   display: block;
 }
 /* Share button on poster */
 .card-share-btn {
   position: absolute;
-  bottom: 12px;
-  right: 20px;
+  top: 12px;
+  right: 12px;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -514,7 +512,7 @@ body {
   gap: 6px;
   flex-wrap: wrap;
   position: absolute;
-  bottom: 12px;
+  bottom: 60px;
   left: 12px;
   z-index: 5;
   padding: 6px 8px;
@@ -535,37 +533,41 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
-/* Info area below poster — visible on card */
+/* Info area — compact bar at bottom of poster, tap to open details */
 .card-info {
-  position: relative;
-  padding: 12px 20px 20px;
-  z-index: 2;
-  flex-shrink: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 40px 16px 14px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
+  z-index: 4;
   cursor: pointer;
 }
 .card-title {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
   line-height: 1.1;
   margin-bottom: 0;
   letter-spacing: -0.3px;
   text-transform: uppercase;
   display: inline;
+  color: #fff;
 }
 .card-year-inline {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 400;
-  color: var(--text-secondary);
+  color: rgba(255,255,255,0.7);
   margin-left: 8px;
   vertical-align: baseline;
 }
 .card-synopsis-preview {
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.55;
-  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.4;
+  margin-top: 4px;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -577,8 +579,8 @@ body {
   cursor: pointer;
 }
 .card-tap-hint span {
-  font-size: 12px;
-  color: var(--accent);
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
   font-weight: 600;
 }
 .tap-arrow {
