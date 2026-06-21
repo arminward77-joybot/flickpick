@@ -3497,6 +3497,7 @@ let state = {
   lastSwiped: null,
   rightSwipeCount: 0,
   pendingRecommendation: null,
+  pendingWatchlistCheck: null,
   expandedGenres: {},
   seenMovieIds: [],
   lastSwipeDate: null,
@@ -3650,6 +3651,10 @@ function shareMovie(movie) {
 function renderCard(index, animate = false) {
   if (state.pendingRecommendation) {
     renderRecommendationCard(state.pendingRecommendation, index, animate);
+    return;
+  }
+  if (state.pendingWatchlistCheck) {
+    renderWatchlistCheckCard(state.pendingWatchlistCheck, index, animate);
     return;
   }
 
@@ -3940,7 +3945,7 @@ function setupSwipeGesture(card) {
       state.currentIndex++;
       saveState();
 
-      setTimeout(() => { renderCard(state.currentIndex, true); updateRewindBtn(); checkRecommendation(); }, 350);
+      setTimeout(() => { renderCard(state.currentIndex, true); updateRewindBtn(); checkRecommendation(); checkWatchlistNudge(); }, 350);
     } else {
       // Snap back
       card.classList.add('animating');
@@ -4005,7 +4010,7 @@ function swipeCardProgrammatic(direction) {
   state.currentIndex++;
   saveState();
 
-  setTimeout(() => { renderCard(state.currentIndex, true); updateRewindBtn(); checkRecommendation(); }, 350);
+  setTimeout(() => { renderCard(state.currentIndex, true); updateRewindBtn(); checkRecommendation(); checkWatchlistNudge(); }, 350);
 }
 
 // ============================================================
@@ -4948,6 +4953,87 @@ function checkRecommendation() {
     const rec = getRecommendedMovie();
     if (rec) state.pendingRecommendation = rec;
   }
+}
+
+// ============================================================
+// WATCHLIST CHECK-IN — nudge stale saved movies between swipes
+// ("Have you watched this yet?")
+// ============================================================
+const WATCHLIST_STALE_DAYS = 7;    // a save becomes "stale" after this long
+const WATCHLIST_NUDGE_EVERY = 10;  // swipes between possible check-ins
+const WATCHLIST_RENUDGE_DAYS = 3;  // don't re-ask the same movie within this window
+
+function findStaleWatchlistItem() {
+  const now = Date.now();
+  const staleMs = WATCHLIST_STALE_DAYS * 86400000;
+  const renudgeMs = WATCHLIST_RENUDGE_DAYS * 86400000;
+  const eligible = (state.watchlist || []).filter(w =>
+    (now - (w.addedAt || now)) >= staleMs &&
+    (!w.lastNudged || (now - w.lastNudged) >= renudgeMs)
+  );
+  if (!eligible.length) return null;
+  eligible.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0)); // oldest first
+  return eligible[0];
+}
+
+function checkWatchlistNudge() {
+  if (state.pendingRecommendation || state.pendingWatchlistCheck) return; // never stack interstitials
+  if (state.swipedCount > 0 && state.swipedCount % WATCHLIST_NUDGE_EVERY === 0) {
+    const item = findStaleWatchlistItem();
+    if (item) state.pendingWatchlistCheck = item;
+  }
+}
+
+function renderWatchlistCheckCard(entry, resumeIndex, animate = false) {
+  const movie = entry.movie;
+  endScreen.classList.remove('active');
+  document.getElementById('fabContainer').style.display = 'none';
+
+  const days = Math.max(1, Math.floor((Date.now() - (entry.addedAt || Date.now())) / 86400000));
+  const posterHTML = movie.poster
+    ? `<img class="card-poster-img" src="${movie.poster}" alt="${movie.title}" draggable="false" referrerpolicy="no-referrer" style="filter:brightness(0.5)">`
+    : `<div class="card-poster-placeholder" style="background:linear-gradient(135deg,#333,#555)">${movie.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('')}</div>`;
+
+  cardContainer.innerHTML = `
+    <div class="movie-card ${animate ? 'entering' : ''}" id="activeCard">
+      <div class="card-poster-wrapper">
+        ${posterHTML}
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);margin-bottom:10px;">&#9203; Still on your list</div>
+          <div class="card-title" style="font-size:24px;line-height:1.2;">${movie.title}</div>
+          <div style="color:var(--text-secondary);font-size:13px;margin:4px 0 16px;">Saved ${days} day${days > 1 ? 's' : ''} ago${movie.year ? ' &middot; ' + movie.year : ''}</div>
+          <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:16px;">Have you watched this yet?</div>
+          <div style="display:flex;gap:10px;">
+            <button id="ciNo" style="flex:1;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:var(--bg-surface);color:var(--text-primary);">Not yet</button>
+            <button id="ciYes" style="flex:1;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;">Yes &mdash; rate it</button>
+          </div>
+          <button id="ciRemove" style="margin-top:12px;background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;padding:6px;">Remove from my list</button>
+        </div>
+      </div>
+    </div>`;
+
+  entry.lastNudged = Date.now(); // mark asked so we don't re-nudge this one for a while
+  saveState();
+
+  document.getElementById('ciYes').addEventListener('click', () => {
+    state.pendingWatchlistCheck = null;
+    saveState();
+    renderCard(resumeIndex, true);
+    openRatingSheet(movie); // markAsWatched (on submit) moves it watchlist -> watched
+  });
+  document.getElementById('ciNo').addEventListener('click', () => {
+    state.pendingWatchlistCheck = null;
+    saveState();
+    showToast('Kept on your list', 'info');
+    renderCard(resumeIndex, true);
+  });
+  document.getElementById('ciRemove').addEventListener('click', () => {
+    removeFromWatchlist(movie.id);
+    state.pendingWatchlistCheck = null;
+    saveState();
+    showToast('Removed from your list', 'info');
+    renderCard(resumeIndex, true);
+  });
 }
 
 function renderRecommendationCard(rec, resumeIndex, animate = false) {

@@ -21,6 +21,7 @@ _Last updated: June 21, 2026 — reconciled against the current `index.html` bui
 - Watchlist with To Watch / Watched tabs, search, and sort
 - Slide-to-rate star rating + optional written review
 - Share a single movie or your whole watchlist (Web Share API + clipboard fallback)
+- Watchlist check-in — movies sitting unwatched resurface between swipes asking "Have you watched this yet?" (rate / not yet / remove)
 
 **Detail & trailers**
 - Full movie detail panel — synopsis, genres, cast
