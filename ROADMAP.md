@@ -32,8 +32,11 @@ _Last updated: June 21, 2026 — reconciled against the current `index.html` bui
 - Top 3 movies + taste-profile genre chart
 - Dark / light theme toggle
 
-**Recommendations (v1)**
-- Taste-based recommendation engine — weights genres & decades by rating², surfaces a pick every 5 right-swipes with a "because" reason
+**Recommendations / learning (v2)**
+- Taste model built from saves, star ratings, and NOPEs (left-swipes) — biases the discover feed toward your favorite genres and away from disliked ones
+- Blends in "deep cuts" pulled from TMDB recommendations seeded by your top-rated films
+- Balanced re-ranking keeps variety; personalization kicks in after a few swipes (cold start stays broad, no labels)
+- Still surfaces a periodic spotlight pick with a "because" reason
 
 **Accounts & sync**
 - Firebase email/password auth + Google & Apple social login
@@ -69,7 +72,6 @@ _Last updated: June 21, 2026 — reconciled against the current `index.html` bui
 ### 🟠 Significant effort
 - **5-question mood survey** — map answers to TMDB discover params
 - **Notification system** — types, storage, badges, movie-night reminders
-- **Recommendation engine v2** — also learn from left-swipes; surface deep cuts & cult classics
 
 ### 🔴 Major features
 - **Social reviews + feed** — public reviews, follow system, moderation

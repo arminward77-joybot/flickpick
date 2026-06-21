@@ -3100,7 +3100,7 @@ const TMDB = {
     this.genreList.forEach(g => { this.genreMap[g.id] = g.name; });
   },
 
-  buildDiscoverParams(page, filters) {
+  buildDiscoverParams(page, filters, profile) {
     const params = new URLSearchParams({
       sort_by: 'popularity.desc',
       include_adult: 'false',
@@ -3114,18 +3114,19 @@ const TMDB = {
       params.set('api_key', this.API_KEY);
       params.set('language', 'en-US');
     }
+    let manualGenre = false;
     if (filters && filters.genres && filters.genres.length > 0) {
       const genreIds = filters.genres.map(name => {
         const g = this.genreList.find(gl => gl.name === name);
         return g ? g.id : null;
       }).filter(Boolean);
-      if (genreIds.length) params.set('with_genres', genreIds.join(','));
+      if (genreIds.length) { params.set('with_genres', genreIds.join(',')); manualGenre = true; }
     }
     if (filters && filters.yearMin) params.set('primary_release_date.gte', `${filters.yearMin}-01-01`);
     if (filters && filters.yearMax) params.set('primary_release_date.lte', `${filters.yearMax}-12-31`);
     if (filters && filters.mood) {
       const g = this.genreList.find(gl => gl.name === filters.mood);
-      if (g) params.set('with_genres', String(g.id));
+      if (g) { params.set('with_genres', String(g.id)); manualGenre = true; }
     }
     if (filters && filters.streaming && filters.streaming.length > 0) {
       const providerIds = filters.streaming.map(name => STREAMING_PROVIDER_IDS[name]).filter(Boolean);
@@ -3134,11 +3135,19 @@ const TMDB = {
         params.set('watch_region', 'US');
       }
     }
+    // Taste biasing — only when the user hasn't picked a genre/mood themselves.
+    if (profile && profile.hasSignal && !manualGenre) {
+      const toId = name => { const g = this.genreList.find(gl => gl.name === name); return g ? g.id : null; };
+      const likeIds = profile.topGenreNames.map(toId).filter(Boolean);
+      if (likeIds.length) params.set('with_genres', likeIds.join('|')); // OR — broaden toward taste, not narrow
+      const avoidIds = profile.avoidGenreNames.map(toId).filter(Boolean);
+      if (avoidIds.length) params.set('without_genres', avoidIds.join(','));
+    }
     return params;
   },
 
-  async fetchPage(page, filters) {
-    const params = this.buildDiscoverParams(page, filters);
+  async fetchPage(page, filters, profile) {
+    const params = this.buildDiscoverParams(page, filters, profile);
     const endpoint = USE_PROXY ? 'discover' : 'discover/movie';
     const resp = await fetch(`${this.BASE}/${endpoint}?${params}`);
     const data = await resp.json();
@@ -3172,6 +3181,15 @@ const TMDB = {
     const trailer = (data.results || []).find(v => v.type === 'Trailer' && v.site === 'YouTube')
       || (data.results || []).find(v => v.site === 'YouTube');
     return trailer ? trailer.key : null;
+  },
+
+  async fetchRecommendations(movieId) {
+    const url = USE_PROXY
+      ? `${this.BASE}/movie/${movieId}/recommendations`
+      : `${this.BASE}/movie/${movieId}/recommendations?api_key=${this.API_KEY}&language=en-US`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    return (data.results || []).map(m => this.mapMovie(m));
   },
 
   mapMovie(tmdb) {
@@ -3270,11 +3288,26 @@ async function loadMoreMovies(filters) {
   moviesLoading = true;
   try {
     currentDiscoverPage++;
-    const newMovies = await TMDB.fetchPage(currentDiscoverPage, filters);
+    const profile = computeTasteProfile();
+    let newMovies = await TMDB.fetchPage(currentDiscoverPage, filters, profile);
+
+    // Blend in a few deep cuts from your favorites (balanced — keeps variety)
+    if (profile.canDeepCut) {
+      try {
+        await refillDeepCutPool(profile);
+        const cuts = takeDeepCuts(3, filters);
+        if (cuts.length) newMovies = blendBalanced(newMovies, cuts);
+      } catch (e) {}
+    }
+
     // Deduplicate by id + filter out already-swiped movies
     const existingIds = new Set(MOVIES.map(m => m.id));
     const seenSet = new Set(state.seenMovieIds);
-    const unique = newMovies.filter(m => !existingIds.has(m.id) && !seenSet.has(m.id));
+    let unique = newMovies.filter(m => m && !existingIds.has(m.id) && !seenSet.has(m.id));
+
+    // Gently re-rank toward taste once there's enough signal (cold start = untouched order)
+    if (profile.hasSignal) unique = balancedRank(unique, profile);
+
     MOVIES.push(...unique);
   } catch (e) {
     console.error('Failed to load movies from TMDB:', e);
@@ -3307,6 +3340,140 @@ function getCurrentFilters() {
 }
 
 // ============================================================
+// RECOMMENDATION / "LEARNING" ENGINE
+// Balanced personalization: the feed leans toward what you rate
+// highly and save, away from what you NOPE, and blends in deep
+// cuts from TMDB recommendations — while keeping some variety.
+// ============================================================
+const decadeKeyOf = (y) => { const n = parseInt(y); return n ? `${Math.floor(n / 10) * 10}s` : null; };
+
+// Capture a negative signal when the user swipes left (NOPE).
+function recordDislike(movie) {
+  if (!movie) return;
+  state.dislikedGenres = state.dislikedGenres || {};
+  (movie.genres || []).forEach(g => { state.dislikedGenres[g] = (state.dislikedGenres[g] || 0) + 1; });
+  const k = decadeKeyOf(movie.year);
+  if (k) { state.dislikedDecades = state.dislikedDecades || {}; state.dislikedDecades[k] = (state.dislikedDecades[k] || 0) + 1; }
+  // saveState() runs right after this in the swipe handlers, persisting it.
+}
+
+// Reverse a dislike when the user undoes a left-swipe.
+function unrecordDislike(movie) {
+  if (!movie) return;
+  const dg = state.dislikedGenres || {};
+  (movie.genres || []).forEach(g => { if (dg[g]) { dg[g] -= 1; if (dg[g] <= 0) delete dg[g]; } });
+  const k = decadeKeyOf(movie.year);
+  const dd = state.dislikedDecades || {};
+  if (k && dd[k]) { dd[k] -= 1; if (dd[k] <= 0) delete dd[k]; }
+}
+
+// Build a taste profile from saves (watchlist), ratings (watched) and dislikes.
+function computeTasteProfile() {
+  const genreWeights = {}, decadeWeights = {};
+  const addG = (n, w) => { if (n) genreWeights[n] = (genreWeights[n] || 0) + w; };
+  const addD = (k, w) => { if (k) decadeWeights[k] = (decadeWeights[k] || 0) + w; };
+
+  // Watched + star ratings: 5★ = +2 ... 1★ = -2
+  (state.watched || []).forEach(w => {
+    const wt = (w.stars || 0) - 3;
+    (w.movie.genres || []).forEach(g => addG(g, wt));
+    addD(decadeKeyOf(w.movie.year), wt);
+  });
+  // Saves = positive interest
+  (state.watchlist || []).forEach(w => {
+    (w.movie.genres || []).forEach(g => addG(g, 1));
+    addD(decadeKeyOf(w.movie.year), 0.5);
+  });
+  // Dislikes = negative
+  const dg = state.dislikedGenres || {};
+  Object.keys(dg).forEach(g => addG(g, -0.6 * dg[g]));
+  const dd = state.dislikedDecades || {};
+  Object.keys(dd).forEach(k => addD(k, -0.4 * dd[k]));
+
+  const totalDislikes = Object.values(dg).reduce((a, b) => a + b, 0);
+  const signalCount = (state.watched || []).length + (state.watchlist || []).length + totalDislikes;
+
+  const topGenreNames = Object.entries(genreWeights).filter(([, w]) => w > 0)
+    .sort((a, b) => b[1] - a[1]).slice(0, 3).map(([g]) => g);
+  const avoidGenreNames = Object.entries(genreWeights).filter(([g, w]) => w <= -1.5 && !topGenreNames.includes(g))
+    .sort((a, b) => a[1] - b[1]).slice(0, 2).map(([g]) => g);
+  const topDecadeEntry = Object.entries(decadeWeights).filter(([, w]) => w > 0).sort((a, b) => b[1] - a[1])[0];
+
+  // Seeds for deep cuts: most-loved films first, then recent saves
+  const seedIds = [];
+  (state.watched || []).filter(w => (w.stars || 0) >= 4).sort((a, b) => (b.stars || 0) - (a.stars || 0))
+    .forEach(w => seedIds.push(w.movie._tmdbId || w.movie.id));
+  (state.watchlist || []).slice(-5).reverse().forEach(w => seedIds.push(w.movie._tmdbId || w.movie.id));
+  const favoriteSeedIds = [...new Set(seedIds.filter(Boolean))].slice(0, 3);
+
+  return {
+    genreWeights, decadeWeights, topGenreNames, avoidGenreNames,
+    topDecade: topDecadeEntry ? topDecadeEntry[0] : null,
+    favoriteSeedIds,
+    hasSignal: signalCount >= 3 && topGenreNames.length > 0, // bias the query once there's enough signal
+    canDeepCut: favoriteSeedIds.length > 0,
+  };
+}
+
+// Deep-cut pool: lesser-known matches pulled from TMDB recommendations for your favorites.
+let deepCutPool = [];
+let deepCutSeedKey = '';
+async function refillDeepCutPool(profile) {
+  const key = profile.favoriteSeedIds.join(',');
+  if (key && key === deepCutSeedKey && deepCutPool.length > 4) return; // still fresh
+  deepCutSeedKey = key;
+  const collected = [];
+  for (const id of profile.favoriteSeedIds) {
+    try { collected.push(...await TMDB.fetchRecommendations(id)); } catch (e) {}
+  }
+  const seen = new Set(state.seenMovieIds);
+  const existing = new Set(MOVIES.map(m => m.id));
+  const ids = new Set();
+  deepCutPool = collected.filter(m => m && !ids.has(m.id) && !seen.has(m.id) && !existing.has(m.id) && ids.add(m.id));
+}
+function passesClientFilters(m, filters) {
+  if (!m) return false;
+  if (filters.yearMin && m.year && parseInt(m.year) < filters.yearMin) return false;
+  if (filters.yearMax && m.year && parseInt(m.year) > filters.yearMax) return false;
+  const wantGenres = [];
+  if (filters.mood) wantGenres.push(filters.mood);
+  if (filters.genres) wantGenres.push(...filters.genres);
+  if (wantGenres.length && !(m.genres || []).some(g => wantGenres.includes(g))) return false;
+  return true;
+}
+function takeDeepCuts(n, filters) {
+  const out = [];
+  while (deepCutPool.length && out.length < n) {
+    const m = deepCutPool.shift();
+    if (passesClientFilters(m, filters)) { m._deepCut = true; out.push(m); }
+  }
+  return out;
+}
+
+// Insert deep cuts at spaced positions so they don't clump.
+function blendBalanced(base, cuts) {
+  if (!cuts.length) return base;
+  const out = base.slice();
+  const step = Math.max(3, Math.floor(out.length / (cuts.length + 1)));
+  let pos = step;
+  cuts.forEach(c => { out.splice(Math.min(pos, out.length), 0, c); pos += step + 1; });
+  return out;
+}
+
+// Score a batch by taste, with jitter so it stays varied (not a monoculture).
+function balancedRank(list, profile) {
+  const score = (m) => {
+    let s = (m.rating || 0);
+    (m.genres || []).forEach(g => { s += (profile.genreWeights[g] || 0) * 1.5; });
+    if (profile.topDecade && m.year && decadeKeyOf(m.year) === profile.topDecade) s += 1.5;
+    if (m._deepCut) s += 2;
+    return s;
+  };
+  return list.map(m => ({ m, k: score(m) + Math.random() * 4 }))
+    .sort((a, b) => b.k - a.k).map(x => x.m);
+}
+
+// ============================================================
 // STATE
 // ============================================================
 let state = {
@@ -3336,6 +3503,8 @@ let state = {
   streakCount: 0,
   partyHistory: [],
   friends: [],
+  dislikedGenres: {},
+  dislikedDecades: {},
 };
 
 // Load from localStorage
@@ -3360,6 +3529,8 @@ try {
     state.streakCount = saved.streakCount || 0;
     state.partyHistory = saved.partyHistory || [];
     state.friends = saved.friends || [];
+    state.dislikedGenres = saved.dislikedGenres || {};
+    state.dislikedDecades = saved.dislikedDecades || {};
   }
 } catch(e) {}
 
@@ -3384,6 +3555,8 @@ function saveState() {
       streakCount: state.streakCount,
       partyHistory: state.partyHistory,
       friends: state.friends,
+      dislikedGenres: state.dislikedGenres,
+      dislikedDecades: state.dislikedDecades,
     }));
   } catch(e) {}
   // Also sync to Firestore if user is logged in
@@ -3756,6 +3929,8 @@ function setupSwipeGesture(card) {
       if (direction > 0) {
         addToWatchlist(swipedMovie);
         state.rightSwipeCount = (state.rightSwipeCount || 0) + 1;
+      } else {
+        recordDislike(swipedMovie);
       }
 
       state.lastSwiped = { movie: swipedMovie, direction: direction > 0 ? 'right' : 'left', previousIndex: prevIndex, previousSwipedCount: prevSwipedCount };
@@ -3819,6 +3994,8 @@ function swipeCardProgrammatic(direction) {
   if (direction > 0) {
     addToWatchlist(swipedMovie);
     state.rightSwipeCount = (state.rightSwipeCount || 0) + 1;
+  } else {
+    recordDislike(swipedMovie);
   }
 
   state.lastSwiped = { movie: swipedMovie, direction: direction > 0 ? 'right' : 'left', previousIndex: prevIndex, previousSwipedCount: prevSwipedCount };
@@ -5063,6 +5240,8 @@ function doRewind() {
   state.swipedCount = previousSwipedCount;
   if (direction === 'right') {
     state.watchlist = state.watchlist.filter(w => w.movie.id !== movie.id);
+  } else if (direction === 'left') {
+    unrecordDislike(movie);
   }
   state.lastSwiped = null;
   saveState();

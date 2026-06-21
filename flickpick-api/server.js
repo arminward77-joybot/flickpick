@@ -178,6 +178,23 @@ app.get('/api/movie/:id/videos', async (req, res) => {
   }
 });
 
+// GET /api/movie/:id/recommendations — "more like this", cached for 6 hours
+app.get('/api/movie/:id/recommendations', async (req, res) => {
+  try {
+    const movieId = req.params.id;
+    const cacheKey = `recs:${movieId}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) return res.json(cached);
+
+    const data = await tmdbFetch(`/movie/${movieId}/recommendations`, { language: 'en-US' });
+    cacheSet(cacheKey, data, 21600); // 6 hours
+    res.json(data);
+  } catch (err) {
+    console.error('Recommendations fetch error:', err.message);
+    res.status(502).json({ error: 'Failed to fetch recommendations' });
+  }
+});
+
 // ---------------------------------------------------------------------------
 // START
 // ---------------------------------------------------------------------------
