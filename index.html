@@ -732,7 +732,7 @@ body {
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  z-index: 60;
+  z-index: 110;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s;
@@ -746,7 +746,7 @@ body {
   right: 0;
   bottom: 0;
   background: var(--bg-primary);
-  z-index: 61;
+  z-index: 111;
   transform: translateY(100%);
   transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1);
   overflow-y: auto;
@@ -787,7 +787,7 @@ body {
   margin-left: 12px;
 }
 .detail-body {
-  padding: 20px;
+  padding: 20px 20px calc(40px + env(safe-area-inset-bottom, 0px));
 }
 .detail-poster-row {
   display: flex;
@@ -5610,6 +5610,20 @@ document.getElementById('partyCreateBack').addEventListener('click', () => {
   showPartySub('partyHome');
 });
 
+// Party Mode uses Firebase Realtime DB, whose rules reject unauthenticated guests.
+// Sign guests in anonymously; if that's unavailable, route them to log in.
+async function ensurePartyAuth() {
+  if (!auth) return false;
+  if (auth.currentUser) return true;
+  try { await auth.signInAnonymously(); return true; }
+  catch (e) { console.warn('Anonymous sign-in unavailable:', e && e.code); return false; }
+}
+function promptLoginForParty() {
+  showToast('Log in to use Party Mode', 'info');
+  const a = document.getElementById('authScreen');
+  if (a) { a.style.display = 'flex'; requestAnimationFrame(() => a.classList.remove('hidden')); }
+}
+
 document.getElementById('createPartyBtn').addEventListener('click', async () => {
   const nameInput = document.getElementById('createNameInput');
   const name = nameInput.value.trim() || 'Host';
@@ -5628,6 +5642,8 @@ document.getElementById('createPartyBtn').addEventListener('click', async () => 
     showToast('Select at least one streaming service', 'info');
     return;
   }
+
+  if (!(await ensurePartyAuth())) { promptLoginForParty(); return; }
 
   const btn = document.getElementById('createPartyBtn');
   btn.disabled = true;
@@ -5681,7 +5697,8 @@ document.getElementById('createPartyBtn').addEventListener('click', async () => 
     listenToParty();
   } catch (e) {
     console.error('Create party error:', e);
-    showToast('Failed to create party', 'info');
+    if (/PERMISSION_DENIED/i.test(String((e && e.message) || e))) promptLoginForParty();
+    else showToast('Failed to create party', 'info');
   } finally {
     btn.disabled = false;
     btn.textContent = 'Create Party';
@@ -5790,6 +5807,8 @@ document.getElementById('joinPartyBtn').addEventListener('click', async () => {
     return;
   }
 
+  if (!(await ensurePartyAuth())) { errorEl.textContent = 'Log in to use Party Mode'; promptLoginForParty(); return; }
+
   errorEl.textContent = '';
   const btn = document.getElementById('joinPartyBtn');
   btn.disabled = true;
@@ -5835,7 +5854,7 @@ document.getElementById('joinPartyBtn').addEventListener('click', async () => {
     listenToParty();
   } catch (e) {
     console.error('Join party error:', e);
-    errorEl.textContent = 'Connection error. Try again.';
+    errorEl.textContent = /PERMISSION_DENIED/i.test(String((e && e.message) || e)) ? 'Log in to use Party Mode' : 'Connection error. Try again.';
   } finally {
     btn.disabled = false;
     btn.textContent = 'Join Party';
@@ -6461,13 +6480,15 @@ document.getElementById('resultsNewBtn').addEventListener('click', async () => {
   // Listen for Firebase auth state changes
   if (auth) {
     auth.onAuthStateChanged(async (user) => {
-      if (user) {
+      if (user && !user.isAnonymous) {
         firestoreUser = user;
         const displayName = user.displayName || user.email?.split('@')[0] || 'User';
         // Load cloud data (merges with any existing localStorage data)
         await loadUserDataFromFirestore();
         dismissAuth(displayName);
       }
+      // Anonymous sign-ins (used to enable Party Mode for guests) are intentionally
+      // ignored here — they don't change the profile or touch Firestore.
     });
   }
 
