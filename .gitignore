@@ -23,3 +23,6 @@ yarn-error.log*
 
 # Temp / scratch
 *.tmp
+
+# Local helper script (stays on your machine)
+push.command
