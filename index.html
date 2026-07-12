@@ -591,6 +591,10 @@ body {
 .card-container .card-poster-wrapper { flex: none; width: 100%; aspect-ratio: 2 / 3; }
 .card-container .card-poster-img,
 .card-container .card-poster-placeholder { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* Every photo keeps its native aspect ratio, centered and letterboxed on the
+   wrapper's black background — never zoomed/cropped to fill. Posters are 2:3
+   so they still fill the frame edge-to-edge; wider stills get black bars. */
+.card-container .card-poster-img { object-fit: contain; object-position: center; }
 /* Photo gallery dots */
 .card-photo-dots {
   position: absolute;
@@ -2260,6 +2264,19 @@ body {
 }
 .settings-icon { font-size: 18px; }
 .settings-label { font-size: 15px; font-weight: 500; }
+/* Account / About modals */
+.modal-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.6); z-index:120; display:flex; align-items:center; justify-content:center; padding:24px; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+.modal-overlay.open { opacity:1; pointer-events:all; }
+.modal-card { background:var(--bg-card); border-radius:18px; width:100%; max-width:340px; padding:22px; transform:scale(0.96); transition:transform 0.25s; }
+.modal-overlay.open .modal-card { transform:scale(1); }
+.modal-title { font-size:18px; font-weight:800; margin-bottom:14px; }
+.modal-body { color:var(--text-secondary); font-size:14px; line-height:1.6; }
+.modal-body p { margin:0 0 10px; }
+.modal-body a { color:var(--accent); }
+.modal-account-email { color:var(--text-primary); font-weight:600; }
+.modal-btn { display:block; width:100%; border:none; border-radius:12px; padding:13px; font-size:15px; font-weight:700; cursor:pointer; margin-top:10px; }
+.modal-btn.secondary { background:var(--bg-surface); color:var(--text-primary); }
+.modal-btn.danger { background:#ff4d6d; color:#fff; }
 .settings-arrow { color: var(--text-muted); font-size: 14px; }
 
 /* Theme Toggle Switch */
@@ -2623,7 +2640,7 @@ body {
     <button class="auth-skip" id="authSkip">Skip for now</button>
 
     <div class="auth-footer" id="authFooter">
-      By signing up you agree to our <a>Terms</a> &amp; <a>Privacy Policy</a>
+      By signing up you agree to our <a href="./terms.html" target="_blank" rel="noopener">Terms</a> &amp; <a href="./privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a>
     </div>
   </div>
 
@@ -2954,28 +2971,14 @@ body {
             <div class="theme-toggle-thumb"></div>
           </div>
         </div>
-        <div class="settings-item">
-          <div class="settings-item-left">
-            <span class="settings-icon">&#128276;</span>
-            <span class="settings-label">Notifications</span>
-          </div>
-          <span class="settings-arrow">&#8250;</span>
-        </div>
-        <div class="settings-item">
-          <div class="settings-item-left">
-            <span class="settings-icon">&#127760;</span>
-            <span class="settings-label">Region</span>
-          </div>
-          <span class="settings-arrow">&#8250;</span>
-        </div>
-        <div class="settings-item">
+        <div class="settings-item" id="accountSettingsItem" style="cursor:pointer;">
           <div class="settings-item-left">
             <span class="settings-icon">&#128100;</span>
             <span class="settings-label">Account</span>
           </div>
           <span class="settings-arrow">&#8250;</span>
         </div>
-        <div class="settings-item">
+        <div class="settings-item" id="aboutSettingsItem" style="cursor:pointer;">
           <div class="settings-item-left">
             <span class="settings-icon">&#9432;</span>
             <span class="settings-label">About FlickPick</span>
@@ -3027,6 +3030,29 @@ body {
 
   <!-- ===== TOAST ===== -->
   <div class="toast" id="toast"></div>
+
+  <!-- ===== ACCOUNT MODAL ===== -->
+  <div class="modal-overlay" id="accountModal">
+    <div class="modal-card">
+      <div class="modal-title">Account</div>
+      <div class="modal-body" id="accountModalBody"></div>
+      <button class="modal-btn secondary" id="accountModalClose">Close</button>
+    </div>
+  </div>
+
+  <!-- ===== ABOUT MODAL ===== -->
+  <div class="modal-overlay" id="aboutModal">
+    <div class="modal-card">
+      <div class="modal-title">About FlickPick</div>
+      <div class="modal-body">
+        <p>Swipe to discover movies you'll love, save them, rate them, and find something everyone agrees on with Party Mode.</p>
+        <p style="color:var(--text-muted);font-size:13px">Version 1.0.0</p>
+        <p style="color:var(--text-muted);font-size:12px;line-height:1.5">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+        <p><a href="./terms.html" target="_blank" rel="noopener">Terms of Service</a> &middot; <a href="./privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a></p>
+      </div>
+      <button class="modal-btn secondary" id="aboutModalClose">Close</button>
+    </div>
+  </div>
 
   <!-- ===== CONFETTI ===== -->
   <div class="confetti-container" id="confettiContainer"></div>
@@ -3286,6 +3312,7 @@ STREAMING_COLORS['Crunchyroll'] = '#f47521';
 // ============================================================
 let MOVIES = [];
 let moviesLoading = false;
+let loadError = false;
 let currentDiscoverPage = 0;
 let discoverTotalPages = 500;
 
@@ -3315,8 +3342,11 @@ async function loadMoreMovies(filters) {
     if (profile.hasSignal) unique = balancedRank(unique, profile);
 
     MOVIES.push(...unique);
+    loadError = false;
   } catch (e) {
     console.error('Failed to load movies from TMDB:', e);
+    loadError = true;
+    currentDiscoverPage = Math.max(0, currentDiscoverPage - 1); // allow retry of this page
   }
   moviesLoading = false;
 }
@@ -3648,7 +3678,13 @@ cardContainer.addEventListener('error', (e) => {
 }, true);
 cardContainer.addEventListener('load', (e) => {
   const img = e.target;
-  if (img && img.classList && img.classList.contains('card-poster-img')) img.style.opacity = '1';
+  if (img && img.classList && img.classList.contains('card-poster-img')) {
+    img.style.opacity = '1';
+    // Restore the black letterbox background in case an earlier photo 404'd
+    // and swapped the wrapper to the fallback gradient.
+    const wrap = img.closest('.card-poster-wrapper');
+    if (wrap) wrap.style.background = '';
+  }
 }, true);
 
 function buildStreamingBadges(movie) {
@@ -3693,6 +3729,30 @@ function renderCard(index, animate = false) {
           <div style="color:var(--text-secondary);font-size:15px;font-weight:600">Loading movies...</div>
         </div>`;
       setTimeout(() => renderCard(index, animate), 500);
+      return;
+    }
+    if (loadError) {
+      // Load failed — show a retry instead of a misleading "All Caught Up" screen.
+      endScreen.classList.remove('active');
+      document.getElementById('fabContainer').style.display = 'none';
+      cardContainer.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:14px;text-align:center;padding:24px">
+          <div style="font-size:48px">📡</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text-primary)">Couldn't load movies</div>
+          <div style="color:var(--text-secondary);font-size:14px;max-width:260px">Check your connection and try again.</div>
+          <button id="retryLoadBtn" style="margin-top:8px;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:13px 30px;font-size:15px;font-weight:700;cursor:pointer">Try Again</button>
+        </div>`;
+      const rb = document.getElementById('retryLoadBtn');
+      if (rb) rb.addEventListener('click', async () => {
+        loadError = false;
+        cardContainer.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:16px">
+            <div style="font-size:48px">🎬</div>
+            <div style="color:var(--text-secondary);font-size:15px;font-weight:600">Loading movies...</div>
+          </div>`;
+        await loadMoreMovies(getCurrentFilters());
+        renderCard(state.currentIndex, true);
+      });
       return;
     }
     cardContainer.innerHTML = '';
@@ -3765,9 +3825,8 @@ function renderCard(index, animate = false) {
     if (!img || !movie._photos[idx]) return;
     movie._photoIndex = idx;
     img.src = movie._photos[idx];
-    // All photos fill the same poster-shaped frame (cover) so the card never changes aspect ratio
-    img.style.objectFit = 'cover';
-    img.style.objectPosition = idx === 0 ? 'center top' : 'center';
+    // The frame stays 2:3, but each photo renders at its native aspect ratio
+    // (object-fit: contain via CSS), centered and letterboxed on black.
     updatePhotoDots();
   }
 
@@ -3961,6 +4020,7 @@ function setupSwipeGesture(card) {
 
       state.lastSwiped = { movie: swipedMovie, direction: direction > 0 ? 'right' : 'left', previousIndex: prevIndex, previousSwipedCount: prevSwipedCount };
       markMovieAsSeen(swipedMovie.id);
+      haptic('light');
       updateSwipeStreak();
       state.swipedCount++;
       state.currentIndex++;
@@ -4026,6 +4086,7 @@ function swipeCardProgrammatic(direction) {
 
   state.lastSwiped = { movie: swipedMovie, direction: direction > 0 ? 'right' : 'left', previousIndex: prevIndex, previousSwipedCount: prevSwipedCount };
   markMovieAsSeen(swipedMovie.id);
+  haptic('light');
   updateSwipeStreak();
   state.swipedCount++;
   state.currentIndex++;
@@ -4824,6 +4885,7 @@ function showToast(message, type = 'info') {
 // CONFETTI
 // ============================================================
 function fireConfetti() {
+  haptic('success');
   const container = document.getElementById('confettiContainer');
   const colors = ['#e94560', '#ff6b8a', '#ffd700', '#00c853', '#6c63ff', '#00a8e1'];
   for (let i = 0; i < 40; i++) {
@@ -5336,6 +5398,97 @@ function doRewind() {
 }
 
 document.getElementById('rewindBtn').addEventListener('click', doRewind);
+
+// ============================================================
+// HAPTICS — native value for the iOS wrapper; vibration fallback on web/Android
+// ============================================================
+function haptic(kind) {
+  try {
+    const Cap = window.Capacitor;
+    if (Cap && Cap.Plugins && Cap.Plugins.Haptics) {
+      const H = Cap.Plugins.Haptics;
+      if (kind === 'success') H.notification({ type: 'SUCCESS' });
+      else if (kind === 'heavy') H.impact({ style: 'HEAVY' });
+      else if (kind === 'medium') H.impact({ style: 'MEDIUM' });
+      else H.impact({ style: 'LIGHT' });
+      return;
+    }
+  } catch (e) {}
+  if (navigator.vibrate) {
+    navigator.vibrate(kind === 'success' ? [10, 40, 10] : kind === 'heavy' ? 25 : kind === 'medium' ? 15 : 8);
+  }
+}
+
+// ============================================================
+// SETTINGS — Account (with delete) + About modals
+// ============================================================
+function openModal(id) { const m = document.getElementById(id); if (m) m.classList.add('open'); }
+function closeModal(id) { const m = document.getElementById(id); if (m) m.classList.remove('open'); }
+
+function renderAccountModal() {
+  const body = document.getElementById('accountModalBody');
+  const user = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+  const signedIn = user && !user.isAnonymous;
+  body.innerHTML = signedIn
+    ? `<p>Signed in as <span class="modal-account-email">${user.email || user.displayName || 'your account'}</span>.</p>
+       <button class="modal-btn danger" id="deleteAccountBtn">Delete Account</button>
+       <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Permanently deletes your account and all saved data. This can't be undone.</p>`
+    : `<p>You're browsing as a guest — your watchlist and ratings are saved only on this device.</p>
+       <button class="modal-btn danger" id="clearGuestBtn">Clear my data</button>
+       <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Removes everything saved on this device. This can't be undone.</p>`;
+  const del = document.getElementById('deleteAccountBtn');
+  if (del) del.addEventListener('click', deleteAccount);
+  const clr = document.getElementById('clearGuestBtn');
+  if (clr) clr.addEventListener('click', clearGuestData);
+}
+
+async function deleteAccount() {
+  if (!confirm('Delete your account and all your data permanently? This cannot be undone.')) return;
+  const btn = document.getElementById('deleteAccountBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting...'; }
+  try {
+    const user = auth.currentUser;
+    // Best-effort cloud data delete first, then the auth user.
+    try { if (firestore && user) await firestore.collection('users').doc(user.uid).delete(); } catch (e) { console.warn('Data delete:', e); }
+    await user.delete();
+    try { localStorage.removeItem('flickpick_state'); localStorage.removeItem('flickpick_auth'); } catch (e) {}
+    showToast('Account deleted', 'success');
+    setTimeout(() => location.reload(), 800);
+  } catch (e) {
+    console.error('Delete account error:', e);
+    if (e && e.code === 'auth/requires-recent-login') {
+      showToast('Please sign in again, then delete', 'info');
+      try { await auth.signOut(); } catch (_) {}
+      const a = document.getElementById('authScreen');
+      if (a) { a.style.display = 'flex'; requestAnimationFrame(() => a.classList.remove('hidden')); }
+    } else {
+      showToast('Could not delete account', 'info');
+    }
+    if (btn) { btn.disabled = false; btn.textContent = 'Delete Account'; }
+  }
+}
+
+function clearGuestData() {
+  if (!confirm('Clear all your saved data on this device? This cannot be undone.')) return;
+  try { localStorage.removeItem('flickpick_state'); localStorage.removeItem('flickpick_auth'); } catch (e) {}
+  showToast('Data cleared', 'success');
+  setTimeout(() => location.reload(), 800);
+}
+
+(function wireSettingsModals() {
+  const acct = document.getElementById('accountSettingsItem');
+  if (acct) acct.addEventListener('click', () => { renderAccountModal(); openModal('accountModal'); });
+  const about = document.getElementById('aboutSettingsItem');
+  if (about) about.addEventListener('click', () => openModal('aboutModal'));
+  const ac = document.getElementById('accountModalClose');
+  if (ac) ac.addEventListener('click', () => closeModal('accountModal'));
+  const abc = document.getElementById('aboutModalClose');
+  if (abc) abc.addEventListener('click', () => closeModal('aboutModal'));
+  ['accountModal', 'aboutModal'].forEach(id => {
+    const m = document.getElementById(id);
+    if (m) m.addEventListener('click', (e) => { if (e.target === m) closeModal(id); });
+  });
+})();
 
 // ============================================================
 // DARK / LIGHT MODE

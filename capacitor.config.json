@@ -1,0 +1,12 @@
+{
+  "appId": "com.flickpick.app",
+  "appName": "FlickPick",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https"
+  },
+  "ios": {
+    "contentInset": "always"
+  }
+}
