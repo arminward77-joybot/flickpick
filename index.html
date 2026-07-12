@@ -3,7 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>FlickPick</title>
+<title>FlickPick — Swipe. Save. Watch together.</title>
+<meta name="description" content="Swipe to discover movies you'll love, save them, rate them, and find something everyone agrees on with Party Mode.">
+<!-- PWA / installability -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#0f0f1a">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FlickPick">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- Social / link previews -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FlickPick">
+<meta property="og:title" content="FlickPick — Swipe. Save. Watch together.">
+<meta property="og:description" content="Swipe to discover movies you'll love, save them, rate them, and find something everyone agrees on with Party Mode.">
+<meta property="og:url" content="https://arminward77-joybot.github.io/flickpick/">
+<meta property="og:image" content="https://arminward77-joybot.github.io/flickpick/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FlickPick — Swipe. Save. Watch together.">
+<meta name="twitter:description" content="Swipe to discover movies you'll love, save them, rate them, and find something everyone agrees on with Party Mode.">
+<meta name="twitter:image" content="https://arminward77-joybot.github.io/flickpick/og-image.png">
 <!-- Firebase SDK (compat mode for single-file app) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -36,6 +57,9 @@
   --peacock: #000000;
   --tab-height: 56px;
   --header-height: 48px;
+  /* iPhone notch / home-indicator insets (0 on desktop & Android without notch) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --radius: 16px;
   --radius-sm: 10px;
   --shadow: 0 8px 32px rgba(0,0,0,0.4);
@@ -119,11 +143,13 @@ body {
 
 /* Header */
 .header {
-  height: var(--header-height);
+  height: calc(var(--header-height) + var(--safe-top));
+  padding-top: var(--safe-top);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding-left: 20px;
+  padding-right: 20px;
   background: var(--bg-primary);
   position: relative;
   z-index: 10;
@@ -204,13 +230,13 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: var(--tab-height);
+  height: calc(var(--tab-height) + var(--safe-bottom));
   background: var(--bg-secondary);
   border-top: 1px solid rgba(255,255,255,0.06);
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-bottom: var(--safe-bottom);
   z-index: 100;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -235,10 +261,10 @@ body {
 /* Screen Container */
 .screen {
   position: absolute;
-  top: var(--header-height);
+  top: calc(var(--header-height) + var(--safe-top));
   left: 0;
   right: 0;
-  bottom: var(--tab-height);
+  bottom: calc(var(--tab-height) + var(--safe-bottom));
   display: none;
   flex-direction: column;
   overflow: hidden;
@@ -682,7 +708,8 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 50px 14px 12px;
+  /* extra right padding keeps title/synopsis clear of the ▶ trailer FAB */
+  padding: 50px 66px 12px 14px;
   background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.7) 50%, transparent 100%);
   z-index: 7;
   cursor: pointer;
@@ -765,7 +792,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: calc(16px + var(--safe-top)) 20px 16px;
   background: var(--bg-primary);
   z-index: 5;
   border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -1260,6 +1287,7 @@ body {
 }
 .toast.success { border-left: 3px solid var(--green); }
 .toast.info { border-left: 3px solid var(--accent); }
+.toast.error { border-left: 3px solid #ff4d4f; }
 
 /* ==================== WATCHLIST TAB ==================== */
 .wl-share-btn {
@@ -1492,6 +1520,7 @@ body {
   flex-shrink: 0;
   width: 100px;
   position: relative;
+  cursor: pointer;
 }
 .wl-genre-poster {
   width: 100px;
@@ -1545,6 +1574,71 @@ body {
   transition: opacity 0.2s, color 0.2s;
 }
 .wl-genre-card-remove:hover { opacity: 1; color: var(--red); }
+.wl-genre-card-watched {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--green, #30c58f);
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.wl-genre-card-watched:hover { opacity: 1; }
+.wl-genre-card-watched:active { transform: scale(0.9); }
+.wl-item { cursor: pointer; }
+.wl-review {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 4px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Undo toast (reversible removals) */
+.undo-toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--tab-height) + var(--safe-bottom) + 14px);
+  transform: translateX(-50%) translateY(12px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #23232f;
+  color: #fff;
+  padding: 11px 12px 11px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+  z-index: 320;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.2,0,0,1);
+  white-space: nowrap;
+}
+.undo-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+.undo-toast-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.undo-toast-btn:active { transform: scale(0.94); }
 
 .wl-stream-badge {
   position: absolute;
@@ -2278,6 +2372,21 @@ body {
 .modal-btn.secondary { background:var(--bg-surface); color:var(--text-primary); }
 .modal-btn.danger { background:#ff4d6d; color:#fff; }
 .settings-arrow { color: var(--text-muted); font-size: 14px; }
+.region-select {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 7px 28px 7px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a0a0b8' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
 
 /* Theme Toggle Switch */
 .theme-toggle-track {
@@ -2971,6 +3080,30 @@ body {
             <div class="theme-toggle-thumb"></div>
           </div>
         </div>
+        <div class="settings-item" id="regionSettingsItem">
+          <div class="settings-item-left">
+            <span class="settings-icon">&#127758;</span>
+            <span class="settings-label">Region</span>
+          </div>
+          <select id="regionSelect" class="region-select" aria-label="Streaming region">
+            <option value="US">United States</option>
+            <option value="GB">United Kingdom</option>
+            <option value="CA">Canada</option>
+            <option value="AU">Australia</option>
+            <option value="IN">India</option>
+            <option value="IE">Ireland</option>
+            <option value="DE">Germany</option>
+            <option value="FR">France</option>
+            <option value="ES">Spain</option>
+            <option value="IT">Italy</option>
+            <option value="NL">Netherlands</option>
+            <option value="SE">Sweden</option>
+            <option value="BR">Brazil</option>
+            <option value="MX">Mexico</option>
+            <option value="JP">Japan</option>
+            <option value="KR">South Korea</option>
+          </select>
+        </div>
         <div class="settings-item" id="accountSettingsItem" style="cursor:pointer;">
           <div class="settings-item-left">
             <span class="settings-icon">&#128100;</span>
@@ -3090,15 +3223,15 @@ body {
       <span class="tab-label">Discover</span>
     </div>
     <div class="tab-item" data-tab="watchlist" role="tab" aria-selected="false" aria-controls="watchlistScreen">
-      <span class="tab-icon">&#9829;</span>
+      <span class="tab-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1z"/></svg></span>
       <span class="tab-label">Watchlist</span>
     </div>
     <div class="tab-item" data-tab="party" role="tab" aria-selected="false" aria-controls="partyScreen">
-      <span class="tab-icon">&#127881;</span>
+      <span class="tab-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="9" cy="8" r="3.1"/><path d="M3.3 20c0-3.2 2.5-5.4 5.7-5.4s5.7 2.2 5.7 5.4"/><path d="M16.2 5.3a3.1 3.1 0 0 1 0 5.9"/><path d="M17.8 14.8c1.9.7 3.2 2.5 3.2 5.2"/></svg></span>
       <span class="tab-label">Party</span>
     </div>
     <div class="tab-item" data-tab="profile" role="tab" aria-selected="false" aria-controls="profileScreen">
-      <span class="tab-icon">&#128100;</span>
+      <span class="tab-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5c0-3.8 3.4-6.5 7.5-6.5s7.5 2.7 7.5 6.5"/></svg></span>
       <span class="tab-label">Profile</span>
     </div>
   </div>
@@ -3112,6 +3245,15 @@ body {
 const FLICKPICK_API = 'https://api.themoviedb.org/3'; // Will become your Railway URL, e.g. 'https://flickpick-api-production.up.railway.app/api'
 const USE_PROXY = FLICKPICK_API.includes('railway') || FLICKPICK_API.includes('render') || FLICKPICK_API.includes('localhost:3000/api');
 
+// Global safety net — nothing should fail totally silently. Logs uncaught
+// errors and unhandled promise rejections (e.g. denied/offline Firebase writes).
+window.addEventListener('error', (e) => {
+  console.error('[FlickPick] Uncaught error:', (e && (e.error || e.message)) || e);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('[FlickPick] Unhandled promise rejection:', e && e.reason);
+});
+
 const TMDB = {
   API_KEY: 'c8da188ad93375d4287057f21f67b9b8',
   BASE: USE_PROXY ? FLICKPICK_API : 'https://api.themoviedb.org/3',
@@ -3121,6 +3263,8 @@ const TMDB = {
   currentPage: 0,
   totalPages: 1,
   loading: false,
+  // UI labels that don't match TMDB's genre names verbatim
+  MOOD_ALIAS: { 'Sci-Fi': 'Science Fiction' },
 
   async init() {
     const url = USE_PROXY
@@ -3130,6 +3274,18 @@ const TMDB = {
     const data = await resp.json();
     this.genreList = data.genres || [];
     this.genreList.forEach(g => { this.genreMap[g.id] = g.name; });
+  },
+
+  // Resolve a UI genre/mood label to a TMDB genre id (handles aliases like Sci-Fi)
+  genreIdFor(name) {
+    if (!name) return null;
+    const canon = this.MOOD_ALIAS[name] || name;
+    const g = this.genreList.find(gl => gl.name === canon);
+    return g ? g.id : null;
+  },
+  // Resolve a UI label to the canonical TMDB genre name
+  genreNameFor(name) {
+    return name ? (this.MOOD_ALIAS[name] || name) : name;
   },
 
   buildDiscoverParams(page, filters, profile) {
@@ -3147,29 +3303,29 @@ const TMDB = {
       params.set('language', 'en-US');
     }
     let manualGenre = false;
-    if (filters && filters.genres && filters.genres.length > 0) {
-      const genreIds = filters.genres.map(name => {
-        const g = this.genreList.find(gl => gl.name === name);
-        return g ? g.id : null;
-      }).filter(Boolean);
-      if (genreIds.length) { params.set('with_genres', genreIds.join(',')); manualGenre = true; }
-    }
+    // Merge filter-sheet genre chips AND the active mood pill into one list
+    // (so "Drama chip + Comedy pill" queries both, not just one), and map UI
+    // labels like "Sci-Fi" to TMDB's actual genre name "Science Fiction".
+    const selectedGenreIds = [];
+    const pushGenre = name => {
+      const id = TMDB.genreIdFor(name);
+      if (id && !selectedGenreIds.includes(id)) selectedGenreIds.push(id);
+    };
+    if (filters && filters.genres && filters.genres.length > 0) filters.genres.forEach(pushGenre);
+    if (filters && filters.mood) pushGenre(filters.mood);
+    if (selectedGenreIds.length) { params.set('with_genres', selectedGenreIds.join(',')); manualGenre = true; }
     if (filters && filters.yearMin) params.set('primary_release_date.gte', `${filters.yearMin}-01-01`);
     if (filters && filters.yearMax) params.set('primary_release_date.lte', `${filters.yearMax}-12-31`);
-    if (filters && filters.mood) {
-      const g = this.genreList.find(gl => gl.name === filters.mood);
-      if (g) { params.set('with_genres', String(g.id)); manualGenre = true; }
-    }
     if (filters && filters.streaming && filters.streaming.length > 0) {
       const providerIds = filters.streaming.map(name => STREAMING_PROVIDER_IDS[name]).filter(Boolean);
       if (providerIds.length) {
         params.set('with_watch_providers', providerIds.join('|'));
-        params.set('watch_region', 'US');
+        params.set('watch_region', (typeof state !== 'undefined' && state.region) || 'US');
       }
     }
     // Taste biasing — only when the user hasn't picked a genre/mood themselves.
     if (profile && profile.hasSignal && !manualGenre) {
-      const toId = name => { const g = this.genreList.find(gl => gl.name === name); return g ? g.id : null; };
+      const toId = name => this.genreIdFor(name);
       const likeIds = profile.topGenreNames.map(toId).filter(Boolean);
       if (likeIds.length) params.set('with_genres', likeIds.join('|')); // OR — broaden toward taste, not narrow
       const avoidIds = profile.avoidGenreNames.map(toId).filter(Boolean);
@@ -3258,11 +3414,12 @@ const TMDB = {
         profilePath: c.profile_path ? `${this.IMG}/w185${c.profile_path}` : null,
       }));
     }
-    // Streaming providers (US)
+    // Streaming providers for the user's region (falls back to US)
     if (details['watch/providers'] && details['watch/providers'].results) {
-      const us = details['watch/providers'].results.US;
-      if (us) {
-        const providers = [...(us.flatrate || []), ...(us.ads || [])];
+      const region = (typeof state !== 'undefined' && state.region) || 'US';
+      const reg = details['watch/providers'].results[region] || details['watch/providers'].results.US;
+      if (reg) {
+        const providers = [...(reg.flatrate || []), ...(reg.ads || [])];
         movie.streaming = providers.map(p => p.provider_name).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5);
       }
     }
@@ -3321,18 +3478,41 @@ let loadError = false;
 let currentDiscoverPage = 0;
 let discoverTotalPages = 500;
 
+// One shared pair of document-level pointer listeners for ALL card swipe
+// gestures. Each card's setup registers its handlers here on mouse-down instead
+// of adding its own document listeners — which previously leaked a new pair on
+// every card render (hundreds of dead closures after a long session).
+let activeSwipe = null;
+document.addEventListener('mousemove', e => {
+  if (activeSwipe && activeSwipe.isDragging()) { e.preventDefault(); activeSwipe.onMove(e.clientX, e.clientY); }
+});
+document.addEventListener('mouseup', () => { if (activeSwipe && activeSwipe.isDragging()) activeSwipe.onEnd(); });
+// Bumped on every resetMovies (mood/filter change). A fetch that was in flight
+// when the deck was reset checks this before touching state, so a stale
+// unfiltered page can never land under a freshly-selected filter.
+let loadGeneration = 0;
+
 async function loadMoreMovies(filters) {
   if (moviesLoading || currentDiscoverPage >= discoverTotalPages) return;
   moviesLoading = true;
+  const myGen = loadGeneration;
   try {
-    currentDiscoverPage++;
+    const page = currentDiscoverPage + 1;
     const profile = computeTasteProfile();
-    let newMovies = await TMDB.fetchPage(currentDiscoverPage, filters, profile);
+    let newMovies = await TMDB.fetchPage(page, filters, profile);
+
+    // If a reset happened while we were fetching, discard these results entirely.
+    if (myGen !== loadGeneration) { moviesLoading = false; return; }
+
+    // Stop chasing empty pages once we know the real page count for this query.
+    discoverTotalPages = TMDB.totalPages || discoverTotalPages;
+    currentDiscoverPage = page;
 
     // Blend in a few deep cuts from your favorites (balanced — keeps variety)
     if (profile.canDeepCut) {
       try {
         await refillDeepCutPool(profile);
+        if (myGen !== loadGeneration) { moviesLoading = false; return; }
         const cuts = takeDeepCuts(3, filters);
         if (cuts.length) newMovies = blendBalanced(newMovies, cuts);
       } catch (e) {}
@@ -3350,18 +3530,25 @@ async function loadMoreMovies(filters) {
     loadError = false;
   } catch (e) {
     console.error('Failed to load movies from TMDB:', e);
-    loadError = true;
-    currentDiscoverPage = Math.max(0, currentDiscoverPage - 1); // allow retry of this page
+    if (myGen === loadGeneration) loadError = true;
+    // page counter was not advanced (we only advance on success), so retry re-fetches it
   }
   moviesLoading = false;
 }
 
 async function resetMovies(filters) {
+  loadGeneration++;                 // invalidate any in-flight fetch's results
+  const myGen = loadGeneration;
+  // Wait out an in-flight load so it can't push into the deck after we clear it.
+  let guard = 0;
+  while (moviesLoading && guard++ < 200) await new Promise(r => setTimeout(r, 20));
+  if (myGen !== loadGeneration) return;   // another reset superseded us
   MOVIES = [];
   currentDiscoverPage = 0;
   discoverTotalPages = 500;
   state.currentIndex = 0;
   await loadMoreMovies(filters);
+  if (myGen !== loadGeneration) return;
   await loadMoreMovies(filters); // Pre-fetch 2 pages (40 movies)
 }
 
@@ -3477,8 +3664,8 @@ function passesClientFilters(m, filters) {
   if (filters.yearMin && m.year && parseInt(m.year) < filters.yearMin) return false;
   if (filters.yearMax && m.year && parseInt(m.year) > filters.yearMax) return false;
   const wantGenres = [];
-  if (filters.mood) wantGenres.push(filters.mood);
-  if (filters.genres) wantGenres.push(...filters.genres);
+  if (filters.mood) wantGenres.push(TMDB.genreNameFor(filters.mood));
+  if (filters.genres) filters.genres.forEach(g => wantGenres.push(TMDB.genreNameFor(g)));
   if (wantGenres.length && !(m.genres || []).some(g => wantGenres.includes(g))) return false;
   return true;
 }
@@ -3547,12 +3734,19 @@ let state = {
   friends: [],
   dislikedGenres: {},
   dislikedDecades: {},
+  region: 'US',
 };
+
+// Bump when the persisted shape changes so we can migrate old records instead
+// of silently mixing old and new fields.
+const STATE_VERSION = 2;
 
 // Load from localStorage
 try {
   const saved = JSON.parse(localStorage.getItem('flickpick_state'));
   if (saved) {
+    const savedVersion = saved.version || 1;
+    // (migration hook: run per-version upgrades here as the schema evolves)
     state.watchlist = saved.watchlist || [];
     state.watched = saved.watched || [];
     state.swipedCount = saved.swipedCount || 0;
@@ -3563,7 +3757,10 @@ try {
     state.watchedSort = saved.watchedSort || 'date';
     state.activeMood = saved.activeMood || null;
     state.filters = saved.filters || { genres: [], streaming: [], yearMin: null, yearMax: null };
-    state.lastSwiped = saved.lastSwiped || null;
+    // Don't restore rewind across sessions: the deck is rebuilt fresh (index 0,
+    // seen-filtered) on boot, so a persisted previousIndex would jump past the
+    // new deck. Rewind is only valid within the current session.
+    state.lastSwiped = null;
     state.rightSwipeCount = saved.rightSwipeCount || 0;
     state.expandedGenres = saved.expandedGenres || {};
     state.seenMovieIds = saved.seenMovieIds || [];
@@ -3573,12 +3770,15 @@ try {
     state.friends = saved.friends || [];
     state.dislikedGenres = saved.dislikedGenres || {};
     state.dislikedDecades = saved.dislikedDecades || {};
+    state.region = saved.region || 'US';
   }
 } catch(e) {}
 
 function saveState() {
   try {
     localStorage.setItem('flickpick_state', JSON.stringify({
+      version: STATE_VERSION,
+      region: state.region,
       watchlist: state.watchlist,
       watched: state.watched,
       swipedCount: state.swipedCount,
@@ -3838,7 +4038,10 @@ function renderCard(index, animate = false) {
           <div style="font-size:48px">🎬</div>
           <div style="color:var(--text-secondary);font-size:15px;font-weight:600">Loading movies...</div>
         </div>`;
-      setTimeout(() => renderCard(index, animate), 500);
+      // Re-read the live index on each poll: if the user changed mood/filters
+      // while we were loading, the deck was rebuilt at 0 and this stale index
+      // would otherwise flash "All Caught Up" over a fresh deck.
+      setTimeout(() => { if (state.currentIndex === index) renderCard(state.currentIndex, animate); }, 500);
       return;
     }
     if (loadError) {
@@ -3880,6 +4083,7 @@ function renderCard(index, animate = false) {
   });
 
   const movie = MOVIES[index];
+  state.activeCardMovie = movie; // the movie the trailer FAB should target
 
   const streamingRow = buildStreamingBadges(movie);
 
@@ -4029,6 +4233,7 @@ function setupSwipeGesture(card) {
   if (!card) return;
   let startX = 0, startY = 0, currentX = 0, currentY = 0, rawDeltaY = 0;
   let isDragging = false;
+  let moved = false; // did this drag travel far enough to not be a tap?
   let swipeDirection = null; // 'horizontal' or 'vertical'
   const overlayLike = card.querySelector('#overlayLike');
   const overlayNope = card.querySelector('#overlayNope');
@@ -4037,6 +4242,7 @@ function setupSwipeGesture(card) {
   function onStart(x, y) {
     isDragging = true;
     state.isDragging = true;
+    moved = false;
     startX = x;
     startY = y;
     swipeDirection = null;
@@ -4048,6 +4254,7 @@ function setupSwipeGesture(card) {
     if (!isDragging) return;
     const dx = x - startX;
     const dy = y - startY;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
 
     // Free movement — card follows finger naturally in all directions
     currentX = dx;
@@ -4165,10 +4372,9 @@ function setupSwipeGesture(card) {
   card.addEventListener('mousedown', e => {
     if (isInteractive(e.target)) return;
     e.preventDefault();
+    activeSwipe = { onMove, onEnd, isDragging: () => isDragging };
     onStart(e.clientX, e.clientY);
   });
-  document.addEventListener('mousemove', e => { if (isDragging) { e.preventDefault(); onMove(e.clientX, e.clientY); }});
-  document.addEventListener('mouseup', () => { if (isDragging) onEnd(); });
 
   card.addEventListener('touchstart', e => {
     if (isInteractive(e.target)) return;
@@ -4176,6 +4382,12 @@ function setupSwipeGesture(card) {
   }, { passive: true });
   card.addEventListener('touchmove', e => { const t = e.touches[0]; onMove(t.clientX, t.clientY); }, { passive: true });
   card.addEventListener('touchend', () => onEnd());
+  card.addEventListener('touchcancel', () => { if (isDragging) onEnd(); }); // interrupted drag → snap back
+  // A real drag that snaps back still fires a click; swallow it so it doesn't
+  // flip the photo gallery (desktop) or trigger a tap-zone.
+  card.addEventListener('click', e => {
+    if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; }
+  }, true);
 }
 
 // ============================================================
@@ -4226,20 +4438,46 @@ function addToWatchlist(movie) {
 }
 
 function removeFromWatchlist(movieId) {
-  state.watchlist = state.watchlist.filter(w => w.movie.id !== movieId);
+  movieId = Number(movieId);
+  const idx = state.watchlist.findIndex(w => w.movie.id === movieId);
+  if (idx === -1) return;
+  const [removed] = state.watchlist.splice(idx, 1);
+  // Clear a pending "watched it yet?" nudge that points at this movie (M14).
+  if (state.pendingWatchlistCheck && state.pendingWatchlistCheck.movie && state.pendingWatchlistCheck.movie.id === movieId) {
+    state.pendingWatchlistCheck = null;
+  }
   saveState();
   renderWatchlist();
+  showUndoToast('Removed from watchlist', () => {
+    state.watchlist.splice(Math.min(idx, state.watchlist.length), 0, removed);
+    saveState();
+    renderWatchlist();
+  });
 }
 
 function removeFromWatched(movieId) {
-  state.watched = state.watched.filter(w => w.movie.id !== movieId);
+  movieId = Number(movieId);
+  const idx = state.watched.findIndex(w => w.movie.id === movieId);
+  if (idx === -1) return;
+  const [removed] = state.watched.splice(idx, 1);
   saveState();
   renderWatchlist();
+  showUndoToast('Removed from watched', () => {
+    state.watched.splice(Math.min(idx, state.watched.length), 0, removed);
+    saveState();
+    renderWatchlist();
+  });
 }
 
 function markAsWatched(movie, stars, review) {
   state.watchlist = state.watchlist.filter(w => w.movie.id !== movie.id);
-  if (!state.watched.find(w => w.movie.id === movie.id)) {
+  const existing = state.watched.find(w => w.movie.id === movie.id);
+  if (existing) {
+    // Re-rating: update the existing entry instead of silently keeping the old stars.
+    existing.stars = stars;
+    if (review !== undefined && review !== null && review !== '') existing.review = review;
+    existing.watchedAt = Date.now();
+  } else {
     state.watched.push({ movie, stars, review, watchedAt: Date.now() });
   }
   saveState();
@@ -4340,8 +4578,41 @@ function shareMovieItem(title, rating) {
   }
 }
 
+// One delegated handler for the whole watchlist (no inline onclick, no per-render
+// listener stacking). Handles tap-to-open-details, remove, share, mark-watched,
+// see-all, and sort pills.
+function handleWatchlistClick(e) {
+  const seeAll = e.target.closest('.wl-genre-see-all');
+  if (seeAll) {
+    const genre = seeAll.dataset.genre;
+    state.expandedGenres[genre] = !state.expandedGenres[genre];
+    saveState(); renderWatchlist(); return;
+  }
+  const sortPill = e.target.closest('.sort-pill');
+  if (sortPill) { state.watchedSort = sortPill.dataset.sort; saveState(); renderWatchlist(); return; }
+  const action = e.target.closest('[data-action]');
+  if (action) {
+    const card = action.closest('[data-id]');
+    const id = card ? Number(card.dataset.id) : null;
+    const type = action.dataset.action;
+    if (type === 'remove') {
+      if (state.activeWlTab === 'towatch') removeFromWatchlist(id); else removeFromWatched(id);
+    } else if (type === 'share') {
+      const w = state.watched.find(x => x.movie.id === id);
+      if (w) shareMovieItem(w.movie.title, parseFloat(w.stars || 0).toFixed(1));
+    } else if (type === 'markwatched') {
+      const movie = findSavedMovie(id);
+      if (movie) openRatingSheet(movie);
+    }
+    return;
+  }
+  const card = e.target.closest('[data-id]');
+  if (card) { const movie = findSavedMovie(card.dataset.id); if (movie) openDetailPanel(movie); }
+}
+
 function renderWatchlist() {
   const container = document.getElementById('wlContent');
+  container.onclick = handleWatchlistClick;
   document.getElementById('towatchCount').textContent = `(${state.watchlist.length})`;
   document.getElementById('watchedCount').textContent = `(${state.watched.length})`;
 
@@ -4396,9 +4667,11 @@ function renderWatchlist() {
 
       const movieCards = movies.map(item => {
         const m = item.movie;
+        const title = escapeHtml(m.title);
+        const initials = escapeHtml(m.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join(''));
         const posterHTML = m.poster
-          ? `<img class="wl-genre-poster-img" src="${m.poster}" alt="${m.title}" referrerpolicy="no-referrer">`
-          : `<div class="wl-genre-poster" style="background:linear-gradient(135deg, #333, #555)">${m.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('')}</div>`;
+          ? `<img class="wl-genre-poster-img" src="${escapeHtml(m.poster)}" alt="${title}" referrerpolicy="no-referrer">`
+          : `<div class="wl-genre-poster" style="background:linear-gradient(135deg, #333, #555)">${initials}</div>`;
 
         // Check streaming availability
         let streamBadge = '';
@@ -4406,18 +4679,19 @@ function renderWatchlist() {
           const userServices = state.streamingServices || [];
           const available = m.streaming.filter(s => userServices.includes(s));
           if (available.length > 0) {
-            streamBadge = `<div class="wl-stream-badge" title="${available[0]}">✓ ${available[0]}</div>`;
+            streamBadge = `<div class="wl-stream-badge" title="${escapeHtml(available[0])}">✓ ${escapeHtml(available[0])}</div>`;
           }
         }
 
         return `
-          <div class="wl-genre-card">
-            <div class="wl-genre-card-remove" onclick="removeFromWatchlist(${m.id})">&#10005;</div>
+          <div class="wl-genre-card" data-id="${m.id}">
+            <div class="wl-genre-card-remove" data-action="remove" title="Remove">&#10005;</div>
+            <div class="wl-genre-card-watched" data-action="markwatched" title="Mark watched &amp; rate">&#10003;</div>
             ${posterHTML}
             ${streamBadge}
             <div class="wl-genre-card-info">
-              <div class="wl-genre-card-title">${m.title}</div>
-              <div class="wl-genre-card-year">${m.year || ''}</div>
+              <div class="wl-genre-card-title">${title}</div>
+              <div class="wl-genre-card-year">${escapeHtml(String(m.year || ''))}</div>
             </div>
           </div>`;
       }).join('');
@@ -4434,14 +4708,7 @@ function renderWatchlist() {
         </div>`;
     }).join('');
 
-    container.querySelectorAll('.wl-genre-see-all').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const genre = btn.dataset.genre;
-        state.expandedGenres[genre] = !state.expandedGenres[genre];
-        saveState();
-        renderWatchlist();
-      });
-    });
+    // see-all clicks handled by the delegated handleWatchlistClick
     return;
   }
 
@@ -4468,35 +4735,30 @@ function renderWatchlist() {
     <div class="wl-list">${sortedItems.map(item => {
       const m = item.movie;
       const posterHTML = m.poster
-        ? `<img class="wl-poster-img" src="${m.poster}" alt="${m.title}" referrerpolicy="no-referrer">`
-        : `<div class="wl-poster-placeholder" style="background:linear-gradient(135deg, #333, #555)">${m.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('')}</div>`;
+        ? `<img class="wl-poster-img" src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" referrerpolicy="no-referrer">`
+        : `<div class="wl-poster-placeholder" style="background:linear-gradient(135deg, #333, #555)">${escapeHtml(m.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join(''))}</div>`;
       let stars = '';
       if (item.stars) {
         stars = `★ ${parseFloat(item.stars).toFixed(1)}`;
       }
-      const meta = `${m.year || ''} &middot; ${(m.genres && m.genres[0]) || ''}`;
+      const meta = `${escapeHtml(String(m.year || ''))} &middot; ${escapeHtml((m.genres && m.genres[0]) || '')}`;
+      const reviewHTML = item.review ? `<div class="wl-review">&ldquo;${escapeHtml(item.review)}&rdquo;</div>` : '';
       return `
-        <div class="wl-item">
+        <div class="wl-item" data-id="${m.id}">
           ${posterHTML}
           <div class="wl-info">
-            <div class="wl-title">${m.title}</div>
+            <div class="wl-title">${escapeHtml(m.title)}</div>
             <div class="wl-meta">${meta}</div>
             ${stars ? `<div class="wl-stars">${stars}</div>` : ''}
+            ${reviewHTML}
           </div>
           <div class="wl-item-actions">
-            <button class="wl-item-share" onclick="shareMovieItem('${m.title}', ${parseFloat(item.stars || 0).toFixed(1)})" title="Share">📤</button>
-            <button class="wl-item-remove" onclick="removeFromWatched(${m.id})">&#10005;</button>
+            <button class="wl-item-share" data-action="share" title="Share">📤</button>
+            <button class="wl-item-remove" data-action="remove" title="Remove">&#10005;</button>
           </div>
         </div>`;
     }).join('')}</div>`;
-
-  container.querySelectorAll('.sort-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      state.watchedSort = pill.dataset.sort;
-      saveState();
-      renderWatchlist();
-    });
-  });
+  // sort-pill clicks handled by the delegated handleWatchlistClick
 }
 
 // ============================================================
@@ -4522,12 +4784,15 @@ async function openDetailPanel(movie) {
 
   // Fetch full details if not loaded
   if (!movie._detailsLoaded && movie._tmdbId) {
+    movie._detailsError = false;
     try {
       const details = await TMDB.fetchDetails(movie._tmdbId);
       TMDB.enrichFromDetails(movie, details);
       renderDetailContent(movie);
     } catch (e) {
       console.error('Failed to fetch movie details:', e);
+      movie._detailsError = true;      // show a retry instead of a permanent "Loading…"
+      renderDetailContent(movie);
     }
   }
 }
@@ -4544,49 +4809,50 @@ function renderDetailContent(movie) {
     else starsHTML += '<span style="color:rgba(255,255,255,0.12)">★</span>';
   }
 
-  const genreChips = (movie.genres || []).map(g => `<span class="detail-genre-chip">${g}</span>`).join('');
+  const genreChips = (movie.genres || []).map(g => `<span class="detail-genre-chip">${escapeHtml(g)}</span>`).join('');
+  const retryHTML = '<span class="detail-retry" style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600">Couldn\'t load — tap to retry</span>';
 
   let streamBadges;
   if (movie._detailsLoaded && (!movie.streaming || movie.streaming.length === 0)) {
     streamBadges = '<span class="stream-badge" style="background:#555;font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff;letter-spacing:0.3px">For Digital Rent or Purchase</span>';
   } else if (movie.streaming && movie.streaming.length > 0) {
     streamBadges = (movie.streaming || []).map(s =>
-      `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'};font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff;letter-spacing:0.3px">${s}</span>`
+      `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'};font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff;letter-spacing:0.3px">${escapeHtml(s)}</span>`
     ).join('');
   } else {
-    streamBadges = '<span style="font-size:12px;color:var(--text-muted)">Loading streaming info...</span>';
+    streamBadges = movie._detailsError ? retryHTML : '<span style="font-size:12px;color:var(--text-muted)">Loading streaming info...</span>';
   }
 
   const castHTML = (movie.cast || []).map(c => {
-    const castInitial = c.name.split(' ').map(n => n[0]).join('');
+    const castInitial = escapeHtml(c.name.split(' ').map(n => n[0]).join(''));
     const avatarInner = c.profilePath
-      ? `<img src="${c.profilePath}" style="width:38px;height:38px;border-radius:50%;object-fit:cover" referrerpolicy="no-referrer">`
+      ? `<img src="${escapeHtml(c.profilePath)}" style="width:38px;height:38px;border-radius:50%;object-fit:cover" referrerpolicy="no-referrer">`
       : castInitial;
     return `
       <div class="cast-card">
         <div class="cast-avatar">${avatarInner}</div>
         <div class="cast-info">
-          <div class="cast-name">${c.name}</div>
-          <div class="cast-role">${c.role}</div>
+          <div class="cast-name">${escapeHtml(c.name)}</div>
+          <div class="cast-role">${escapeHtml(c.role)}</div>
         </div>
       </div>`;
-  }).join('') || '<span style="font-size:12px;color:var(--text-muted)">Loading cast...</span>';
+  }).join('') || (movie._detailsError ? retryHTML : '<span style="font-size:12px;color:var(--text-muted)">Loading cast...</span>');
 
   const detailPosterHTML = movie.poster
-    ? `<img class="detail-mini-poster-img" src="${movie.poster}" alt="${movie.title}" referrerpolicy="no-referrer">`
-    : `<div class="detail-mini-poster" style="background:linear-gradient(135deg, #333, #555)">${initials}</div>`;
+    ? `<img class="detail-mini-poster-img" src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)}" referrerpolicy="no-referrer">`
+    : `<div class="detail-mini-poster" style="background:linear-gradient(135deg, #333, #555)">${escapeHtml(initials)}</div>`;
 
   detailBody.innerHTML = `
     <div class="detail-poster-row">
       ${detailPosterHTML}
       <div class="detail-meta">
-        <div class="detail-title">${movie.title}</div>
+        <div class="detail-title">${escapeHtml(movie.title)}</div>
         <div class="detail-year-rating">
-          <span>${movie.year || ''}</span>
+          <span>${escapeHtml(String(movie.year || ''))}</span>
           <span>&middot;</span>
           <span class="detail-star">${starsHTML} ${movie.rating}/10</span>
         </div>
-        ${movie.runtime ? `<div style="font-size:13px;color:var(--text-muted)">${movie.runtime}</div>` : ''}
+        ${movie.runtime ? `<div style="font-size:13px;color:var(--text-muted)">${escapeHtml(String(movie.runtime))}</div>` : ''}
         <div class="detail-genres" style="margin-top:6px">${genreChips}</div>
       </div>
     </div>
@@ -4594,7 +4860,7 @@ function renderDetailContent(movie) {
     <div class="detail-streaming" style="margin-bottom:8px">${streamBadges}</div>
 
     <div class="detail-section-label">Synopsis</div>
-    <div class="detail-synopsis">${movie.synopsis}</div>
+    <div class="detail-synopsis">${escapeHtml(movie.synopsis)}</div>
 
     <div class="detail-section-label">Cast</div>
     <div class="detail-cast-grid">${castHTML}</div>
@@ -4609,10 +4875,14 @@ function renderDetailContent(movie) {
         <div class="detail-extra-label">Runtime</div>
       </div>
       <div class="detail-extra-item">
-        <div class="detail-extra-value">${(movie.genres && movie.genres[0]) || '-'}</div>
+        <div class="detail-extra-value">${escapeHtml((movie.genres && movie.genres[0]) || '-')}</div>
         <div class="detail-extra-label">Genre</div>
       </div>
     </div>`;
+
+  // Retry loading details on tap (M3)
+  const retryEl = detailBody.querySelector('.detail-retry');
+  if (retryEl) retryEl.addEventListener('click', () => { openDetailPanel(movie); });
 }
 
 function closeDetailPanel() {
@@ -4631,10 +4901,13 @@ function closeDetailPanel() {
 detailOverlay.addEventListener('click', closeDetailPanel);
 detailClose.addEventListener('click', closeDetailPanel);
 
-// Swipe-down gesture to close detail panel
+// Swipe-down gesture to close detail panel — only when the panel is already
+// scrolled to the very top, otherwise scrolling down to read cast and dragging
+// back up would drag (and dismiss) the whole panel.
 let detailPanelDragStart = 0;
 let detailPanelDragging = false;
 detailPanel.addEventListener('touchstart', (e) => {
+  if (detailPanel.scrollTop > 0) { detailPanelDragging = false; return; }
   detailPanelDragStart = e.touches[0].clientY;
   detailPanelDragging = true;
 });
@@ -4643,6 +4916,7 @@ detailPanel.addEventListener('touchmove', (e) => {
   if (!detailPanelDragging) return;
   const currentY = e.touches[0].clientY;
   const delta = currentY - detailPanelDragStart;
+  // If the user is scrolling up (delta<0) abandon the close gesture.
   if (delta > 0) {
     detailPanel.style.transform = `translateY(${delta}px)`;
   }
@@ -4670,7 +4944,9 @@ const trailerContent = document.getElementById('trailerContent');
 const trailerClose = document.getElementById('trailerClose');
 
 fabMain.addEventListener('click', async () => {
-  const movie = MOVIES[state.currentIndex];
+  // Use the movie actually on screen — on a "Because You Liked" spotlight or a
+  // watchlist-nudge card that isn't MOVIES[currentIndex].
+  const movie = state.activeCardMovie || MOVIES[state.currentIndex];
   if (!movie) return;
 
   // Show loading overlay
@@ -4696,7 +4972,7 @@ fabMain.addEventListener('click', async () => {
       trailerContent.innerHTML = `
         <div class="trailer-loading">
           <div style="font-size:48px">😕</div>
-          <div>No trailer available for ${movie.title}</div>
+          <div>No trailer available for ${escapeHtml(movie.title)}</div>
         </div>`;
     }
   } catch (e) {
@@ -4740,10 +5016,14 @@ const starSliderWrap = document.getElementById('starSliderWrap');
 function updateSliderDisplay(value) {
   const pct = (value / 5) * 100;
   if (starSliderFill) starSliderFill.style.width = `${pct}%`;
-  ratingBigValue.textContent = parseFloat(value).toFixed(1);
+  const v = parseFloat(value).toFixed(1);
+  ratingBigValue.textContent = v;
+  // Keep assistive tech in sync (was frozen at 0).
+  ratingBigValue.setAttribute('aria-valuenow', v);
+  ratingBigValue.setAttribute('aria-valuetext', `${v} out of 5 stars`);
   const label = document.getElementById('ratingValueLabel');
   if (value > 0) {
-    label.textContent = `${parseFloat(value).toFixed(1)} / 5`;
+    label.textContent = `${v} / 5`;
   } else {
     label.textContent = 'Drag across the stars';
   }
@@ -4784,18 +5064,32 @@ starSliderHit.addEventListener('touchmove', (e) => {
 }, { passive: true });
 starSliderHit.addEventListener('touchend', () => { starDragging = false; });
 
+// Keyboard operability for the rating value (arrow keys adjust by 0.5).
+ratingBigValue.setAttribute('tabindex', '0');
+ratingBigValue.addEventListener('keydown', (e) => {
+  let v = state.selectedStars || 0;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { v = Math.min(5, v + 0.5); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { v = Math.max(0, v - 0.5); }
+  else if (e.key === 'Home') { v = 0; }
+  else if (e.key === 'End') { v = 5; }
+  else return;
+  e.preventDefault();
+  state.selectedStars = v;
+  updateSliderDisplay(v);
+});
+
 function openRatingSheet(movie) {
   state.sheetMovie = movie;
   state.selectedStars = 0;
 
   const sheetPosterHTML = movie.poster
-    ? `<img class="sheet-poster-img" src="${movie.poster}" alt="${movie.title}" referrerpolicy="no-referrer">`
-    : `<div class="sheet-poster-placeholder" style="background:linear-gradient(135deg, #333, #555)">${movie.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('')}</div>`;
+    ? `<img class="sheet-poster-img" src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)}" referrerpolicy="no-referrer">`
+    : `<div class="sheet-poster-placeholder" style="background:linear-gradient(135deg, #333, #555)">${escapeHtml(movie.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join(''))}</div>`;
   document.getElementById('sheetMovieInfo').innerHTML = `
     ${sheetPosterHTML}
     <div>
-      <div class="sheet-title">${movie.title}</div>
-      <div class="sheet-subtitle">${movie.year || ''} &middot; ${(movie.genres || []).join(', ')}</div>
+      <div class="sheet-title">${escapeHtml(movie.title)}</div>
+      <div class="sheet-subtitle">${escapeHtml(String(movie.year || ''))} &middot; ${escapeHtml((movie.genres || []).join(', '))}</div>
     </div>`;
 
   state.selectedStars = 0;
@@ -5000,6 +5294,46 @@ function showToast(message, type = 'info') {
   toastTimeout = setTimeout(() => { toastEl.classList.remove('show'); }, 2200);
 }
 
+// Escape any API/user string before it goes into innerHTML (titles with quotes,
+// party member names, reviews, etc). Prevents broken markup and injection.
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Toast with an Undo button (for reversible destructive actions).
+let undoToastTimeout = null;
+function showUndoToast(message, onUndo) {
+  let el = document.getElementById('undoToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'undoToast';
+    el.className = 'undo-toast';
+    (document.getElementById('app') || document.body).appendChild(el);
+  }
+  clearTimeout(undoToastTimeout);
+  el.innerHTML = `<span class="undo-toast-msg"></span><button class="undo-toast-btn">Undo</button>`;
+  el.querySelector('.undo-toast-msg').textContent = message;
+  el.classList.add('show');
+  let used = false;
+  el.querySelector('.undo-toast-btn').onclick = () => {
+    if (used) return; used = true;
+    clearTimeout(undoToastTimeout);
+    el.classList.remove('show');
+    onUndo();
+  };
+  undoToastTimeout = setTimeout(() => { el.classList.remove('show'); }, 4500);
+}
+
+// Find a movie object (with its full data) from the watchlist or watched list.
+function findSavedMovie(id) {
+  id = Number(id);
+  const w = state.watchlist.find(x => x.movie.id === id) || state.watched.find(x => x.movie.id === id);
+  return w ? w.movie : null;
+}
+
 // ============================================================
 // CONFETTI
 // ============================================================
@@ -5053,6 +5387,7 @@ document.getElementById('btnRestart').addEventListener('click', async () => {
   state.swipedCount = 0;
   state.lastSwiped = null;
   state.pendingRecommendation = null;
+  state.pendingWatchlistCheck = null; // don't flash a stale nudge on the fresh deck
   state.rightSwipeCount = 0;
   saveState();
   await resetMovies(getCurrentFilters());
@@ -5080,10 +5415,12 @@ function getRecommendedMovie() {
   // Only surface a "because you liked…" pick when there's a genuine positive preference.
   if (!topGenre && !topDecade) return null;
 
-  // Score candidates
+  // Score candidates — exclude anything already saved, watched, OR swiped past
+  // (seenMovieIds), so the spotlight never re-pitches a movie you just NOPEd.
   const seenIds = new Set([
     ...state.watched.map(w => w.movie.id),
     ...state.watchlist.map(w => w.movie.id),
+    ...(state.seenMovieIds || []),
   ]);
 
   let candidates = MOVIES.filter(m =>
@@ -5166,13 +5503,14 @@ function checkWatchlistNudge() {
 
 function renderWatchlistCheckCard(entry, resumeIndex, animate = false) {
   const movie = entry.movie;
+  state.activeCardMovie = movie;
   endScreen.classList.remove('active');
   document.getElementById('fabContainer').style.display = 'none';
 
   const days = Math.max(1, Math.floor((Date.now() - (entry.addedAt || Date.now())) / 86400000));
   const posterHTML = movie.poster
-    ? `<img class="card-poster-img" src="${movie.poster}" alt="${movie.title}" draggable="false" referrerpolicy="no-referrer" style="filter:brightness(0.5)">`
-    : `<div class="card-poster-placeholder" style="background:linear-gradient(135deg,#333,#555)">${movie.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('')}</div>`;
+    ? `<img class="card-poster-img" src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)}" draggable="false" referrerpolicy="no-referrer" style="filter:brightness(0.5)">`
+    : `<div class="card-poster-placeholder" style="background:linear-gradient(135deg,#333,#555)">${escapeHtml(movie.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join(''))}</div>`;
 
   cardContainer.innerHTML = `
     <div class="movie-card ${animate ? 'entering' : ''}" id="activeCard">
@@ -5180,8 +5518,8 @@ function renderWatchlistCheckCard(entry, resumeIndex, animate = false) {
         ${posterHTML}
         <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;background:linear-gradient(to top, rgba(0,0,0,0.9) 38%, rgba(0,0,0,0.35) 66%, transparent);">
           <div style="font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);margin-bottom:10px;">&#9203; Still on your list</div>
-          <div class="card-title" style="font-size:24px;line-height:1.2;">${movie.title}</div>
-          <div style="color:var(--text-secondary);font-size:13px;margin:4px 0 16px;">Saved ${days} day${days > 1 ? 's' : ''} ago${movie.year ? ' &middot; ' + movie.year : ''}</div>
+          <div class="card-title" style="font-size:24px;line-height:1.2;">${escapeHtml(movie.title)}</div>
+          <div style="color:var(--text-secondary);font-size:13px;margin:4px 0 16px;">Saved ${days} day${days > 1 ? 's' : ''} ago${movie.year ? ' &middot; ' + escapeHtml(String(movie.year)) : ''}</div>
           <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:16px;">Have you watched this yet?</div>
           <div style="display:flex;gap:10px;">
             <button id="ciNo" style="flex:1;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;background:var(--bg-surface);color:var(--text-primary);">Not yet</button>
@@ -5218,14 +5556,15 @@ function renderWatchlistCheckCard(entry, resumeIndex, animate = false) {
 
 function renderRecommendationCard(rec, resumeIndex, animate = false) {
   const movie = rec.movie;
+  state.activeCardMovie = movie; // trailer FAB should target the recommended movie
   endScreen.classList.remove('active');
   document.getElementById('fabContainer').style.display = 'block';
 
   const streamingRow = buildStreamingBadges(movie);
 
   const posterHTML = movie.poster
-    ? `<img class="card-poster-img" src="${movie.poster}" alt="${movie.title}" draggable="false" referrerpolicy="no-referrer">`
-    : `<div class="card-poster-placeholder" style="background:linear-gradient(135deg, #6c63ff, #a09cff)">${movie.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('')}</div>`;
+    ? `<img class="card-poster-img" src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)}" draggable="false" referrerpolicy="no-referrer">`
+    : `<div class="card-poster-placeholder" style="background:linear-gradient(135deg, #6c63ff, #a09cff)">${escapeHtml(movie.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join(''))}</div>`;
 
   cardContainer.innerHTML = `
     <div class="movie-card recommended ${animate ? 'entering' : ''}" id="activeCard">
@@ -5235,9 +5574,9 @@ function renderRecommendationCard(rec, resumeIndex, animate = false) {
         <div class="card-streaming-row">${streamingRow}</div>
         <div class="card-share-btn" id="cardShareBtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></div>
         <div class="card-info" id="cardInfoTap">
-          <span class="card-title">${movie.title}</span><span class="card-year-inline">${movie.year || ''}</span>
-          <span class="rec-reason">Because you liked "${rec.because}"</span>
-          <div class="card-synopsis-preview">${movie.synopsis}</div>
+          <span class="card-title">${escapeHtml(movie.title)}</span><span class="card-year-inline">${escapeHtml(String(movie.year || ''))}</span>
+          <span class="rec-reason">Because you liked "${escapeHtml(rec.because)}"</span>
+          <div class="card-synopsis-preview">${escapeHtml(movie.synopsis)}</div>
           <div class="card-tap-hint">
             <span class="tap-arrow">&#9650;</span>
             <span>Tap for details</span>
@@ -5272,15 +5611,17 @@ function setupSwipeGestureRec(card, movie, resumeIndex) {
   if (!card) return;
   let startX = 0, startY = 0, currentX = 0, currentY = 0;
   let isDragging = false;
+  let moved = false;
   let swipeDirection = null;
   const overlayLike = card.querySelector('#overlayLike');
   const overlayNope = card.querySelector('#overlayNope');
   const overlayWatched = card.querySelector('#overlayWatched');
 
-  function onStart(x, y) { isDragging = true; state.isDragging = true; startX = x; startY = y; card.style.transition = 'none'; card.classList.remove('entering'); }
+  function onStart(x, y) { isDragging = true; state.isDragging = true; moved = false; startX = x; startY = y; card.style.transition = 'none'; card.classList.remove('entering'); }
   function onMove(x, y) {
     if (!isDragging) return;
     currentX = x - startX; currentY = y - startY;
+    if (Math.abs(currentX) > 6 || Math.abs(currentY) > 6) moved = true;
     const rotation = currentX * 0.08;
     card.style.transform = `translateX(${currentX}px) translateY(${currentY}px) rotate(${rotation}deg)`;
 
@@ -5316,6 +5657,8 @@ function setupSwipeGestureRec(card, movie, resumeIndex) {
       card.classList.add('animating');
       card.style.transform = `translateX(${currentX * 1.5}px) translateY(-${window.innerHeight + 200}px) rotate(${currentX * 0.1}deg)`;
       card.style.opacity = '0';
+      state.swipedCount++; // count the spotlight interaction so Save Rate can't exceed 100%
+      markMovieAsSeen(movie.id);
       state.pendingRecommendation = null;
       saveState();
       setTimeout(() => { openRatingSheet(movie); renderCard(resumeIndex, true); }, 350);
@@ -5326,7 +5669,10 @@ function setupSwipeGestureRec(card, movie, resumeIndex) {
       card.classList.add('animating');
       card.style.transform = `translateX(${direction * (window.innerWidth + 200)}px) translateY(${currentY}px) rotate(${direction * 30}deg)`;
       card.style.opacity = '0';
-      if (direction > 0) addToWatchlist(movie);
+      if (direction > 0) { addToWatchlist(movie); state.rightSwipeCount = (state.rightSwipeCount || 0) + 1; }
+      else recordDislike(movie);
+      state.swipedCount++; // count the spotlight interaction toward swipe totals
+      markMovieAsSeen(movie.id); // don't let the spotlight pick resurface in the deck
       state.pendingRecommendation = null;
       saveState();
       setTimeout(() => { renderCard(resumeIndex, true); updateRewindBtn(); }, 350);
@@ -5340,12 +5686,12 @@ function setupSwipeGestureRec(card, movie, resumeIndex) {
     currentX = 0; currentY = 0;
   }
   function isInteractive(el) { return el.closest('.card-info') || el.closest('.fab-container') || el.closest('.card-share-btn'); }
-  card.addEventListener('mousedown', e => { if (isInteractive(e.target)) return; e.preventDefault(); onStart(e.clientX, e.clientY); });
-  document.addEventListener('mousemove', e => { if (isDragging) { e.preventDefault(); onMove(e.clientX, e.clientY); } });
-  document.addEventListener('mouseup', () => { if (isDragging) onEnd(); });
+  card.addEventListener('mousedown', e => { if (isInteractive(e.target)) return; e.preventDefault(); activeSwipe = { onMove, onEnd, isDragging: () => isDragging }; onStart(e.clientX, e.clientY); });
   card.addEventListener('touchstart', e => { if (isInteractive(e.target)) return; const t = e.touches[0]; onStart(t.clientX, t.clientY); }, { passive: true });
   card.addEventListener('touchmove', e => { const t = e.touches[0]; onMove(t.clientX, t.clientY); }, { passive: true });
   card.addEventListener('touchend', () => onEnd());
+  card.addEventListener('touchcancel', () => { if (isDragging) onEnd(); });
+  card.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
 }
 
 // ============================================================
@@ -5370,6 +5716,7 @@ function updateFilterBadge() {
   btn.classList.toggle('active', count > 0);
 }
 
+let filterPanelBound = false; // static Apply/Clear/slider listeners bound only once
 function initFilterPanel() {
   // Genre chips from TMDB genre list
   const allGenres = TMDB.genreList.map(g => g.name).sort();
@@ -5407,10 +5754,15 @@ function initFilterPanel() {
     yearFill.style.width = (rightPct - leftPct) + '%';
   }
 
-  // Set initial values from state
+  // Set initial values from state (runs every open)
   yearMinSlider.value = state.filters.yearMin || 1900;
   yearMaxSlider.value = state.filters.yearMax || 2026;
   updateYearSlider();
+
+  // The Apply/Clear/slider elements are static — bind their listeners only once,
+  // otherwise every panel open stacks another handler (N opens = N deck resets).
+  if (filterPanelBound) return;
+  filterPanelBound = true;
 
   yearMinSlider.addEventListener('input', () => {
     if (parseInt(yearMinSlider.value) > parseInt(yearMaxSlider.value)) {
@@ -5509,6 +5861,8 @@ function doRewind() {
   } else if (direction === 'left') {
     unrecordDislike(movie);
   }
+  // Un-mark it as seen so the restored card actually appears again.
+  state.seenMovieIds = (state.seenMovieIds || []).filter(id => id !== movie.id);
   state.lastSwiped = null;
   saveState();
   updateRewindBtn();
@@ -5632,6 +5986,23 @@ document.getElementById('themeToggleItem').addEventListener('click', () => {
   applyTheme(state.isDarkMode);
   saveState();
 });
+
+// Region selector — drives streaming availability (discover, party, provider badges)
+(function initRegion() {
+  const sel = document.getElementById('regionSelect');
+  if (!sel) return;
+  sel.value = state.region || 'US';
+  sel.addEventListener('change', async () => {
+    state.region = sel.value;
+    saveState();
+    showToast('Region updated — refreshing movies', 'info');
+    // Re-fetch so provider filtering/badges reflect the new region.
+    if (typeof resetMovies === 'function') {
+      await resetMovies(getCurrentFilters());
+      if (state.activeTab === 'discover') renderCard(0, true);
+    }
+  });
+})();
 
 // ============================================================
 // PARTY MODE — Firebase-powered group swiping
@@ -5767,6 +6138,8 @@ let party = {
   currentMovieIndex: 0,
   status: 'none', // none | waiting | active | finished
   listeners: [],
+  hostId: null,          // id of the current host (for host handoff)
+  reactionListener: null, // per-movie reaction subscription
 };
 
 function generateMemberId() {
@@ -5922,6 +6295,7 @@ document.getElementById('createPartyBtn').addEventListener('click', async () => 
     party.code = code;
     party.isHost = true;
     party.memberId = generateMemberId();
+    party.hostId = party.memberId;
     party.memberName = name;
     party.status = 'waiting';
 
@@ -5958,6 +6332,10 @@ document.getElementById('createPartyBtn').addEventListener('click', async () => 
     });
     await db.ref(`parties/${code}/movieData`).set(movieData);
 
+    // Auto-remove me from the room if I disconnect (close tab, lose network),
+    // so I don't linger as a ghost member that blocks the match check.
+    db.ref(`parties/${code}/members/${party.memberId}`).onDisconnect().remove();
+
     showWaitingRoom();
     listenToParty();
   } catch (e) {
@@ -5984,7 +6362,7 @@ async function fetchPartyMovies(count, providerIds) {
       const partyParams = new URLSearchParams({
         sort_by: 'popularity.desc',
         page: String(page),
-        watch_region: 'US',
+        watch_region: (state.region) || 'US',
         with_watch_providers: providerStr,
         with_watch_monetization_types: 'flatrate',
         'vote_count.gte': '50',
@@ -6100,6 +6478,7 @@ document.getElementById('joinPartyBtn').addEventListener('click', async () => {
     party.code = code;
     party.isHost = false;
     party.memberId = generateMemberId();
+    party.hostId = metadata.hostId || null;
     party.memberName = name;
     party.movieCount = metadata.movieCount;
     party.movieIds = metadata.movieIds || [];
@@ -6114,6 +6493,8 @@ document.getElementById('joinPartyBtn').addEventListener('click', async () => {
     await db.ref(`parties/${code}/members/${party.memberId}`).set({
       name, joinedAt: Date.now(), isHost: false
     });
+    // Auto-remove me on disconnect so I don't hang the room as a ghost member.
+    db.ref(`parties/${code}/members/${party.memberId}`).onDisconnect().remove();
 
     showWaitingRoom();
     listenToParty();
@@ -6144,11 +6525,11 @@ function renderWaitingMembers() {
 
   list.innerHTML = keys.map((id, i) => {
     const m = members[id];
-    const initial = (m.name || '?')[0].toUpperCase();
+    const initial = escapeHtml((m.name || '?')[0].toUpperCase());
     const hostBadge = m.isHost ? '<div class="waiting-member-host">HOST</div>' : '';
     return `<div class="waiting-member">
       <div class="waiting-member-avatar" style="background:${MEMBER_COLORS[i % MEMBER_COLORS.length]}">${initial}</div>
-      <div><div class="waiting-member-name">${m.name || 'Anonymous'}</div>${hostBadge}</div>
+      <div><div class="waiting-member-name">${escapeHtml(m.name || 'Anonymous')}</div>${hostBadge}</div>
     </div>`;
   }).join('');
 
@@ -6194,15 +6575,26 @@ function listenToParty() {
   const membersRef = db.ref(`parties/${party.code}/members`);
   membersRef.on('value', snap => {
     party.members = snap.val() || {};
+    maybeClaimHost();
     if (party.status === 'waiting') renderWaitingMembers();
   });
   party.listeners.push({ ref: membersRef, event: 'value' });
 
   // Listen to status changes
   const statusRef = db.ref(`parties/${party.code}/metadata/status`);
-  statusRef.on('value', snap => {
+  statusRef.on('value', async snap => {
     const newStatus = snap.val();
-    if (newStatus === 'active' && party.status === 'waiting') {
+    if (newStatus === 'active' && party.status !== 'active') {
+      // Covers first start (from waiting) AND a "New Round" (from finished),
+      // where the host swapped in a brand-new movie set.
+      if (!party.isHost) {
+        try {
+          const meta = (await db.ref(`parties/${party.code}/metadata`).once('value')).val() || {};
+          party.movieIds = meta.movieIds || party.movieIds;
+          const md = (await db.ref(`parties/${party.code}/movieData`).once('value')).val() || {};
+          party.movies = party.movieIds.map(id => md[id]).filter(Boolean);
+        } catch (e) { console.error('New round fetch error:', e); }
+      }
       party.status = 'active';
       startPartySwiping();
     } else if (newStatus === 'finished' && party.status !== 'finished') {
@@ -6225,6 +6617,34 @@ function listenToParty() {
 function cleanupPartyListeners() {
   party.listeners.forEach(({ ref, event }) => ref.off(event));
   party.listeners = [];
+  if (party.reactionListener) {
+    try { party.reactionListener.ref.off('child_added', party.reactionListener.cb); } catch (e) {}
+    party.reactionListener = null;
+  }
+}
+
+// If the current host is no longer in the room, promote the earliest-joined
+// remaining member. Only that member writes the change (avoids races).
+function maybeClaimHost() {
+  const ids = Object.keys(party.members || {});
+  if (!ids.length) return;
+  if (party.hostId && party.members[party.hostId]) return; // host still here
+  const sorted = ids.slice().sort((a, b) => (party.members[a].joinedAt || 0) - (party.members[b].joinedAt || 0));
+  const newHostId = sorted[0];
+  party.hostId = newHostId;
+  if (newHostId === party.memberId && !party.isHost) {
+    party.isHost = true;
+    if (db && party.code) {
+      db.ref(`parties/${party.code}/metadata/hostId`).set(newHostId).catch(() => {});
+      db.ref(`parties/${party.code}/members/${party.memberId}/isHost`).set(true).catch(() => {});
+    }
+    if (party.status === 'waiting') {
+      const sb = document.getElementById('startPartyBtn');
+      if (sb) sb.style.display = 'block';
+      renderWaitingMembers();
+    }
+    showToast('You\'re the host now', 'info');
+  }
 }
 
 function leaveParty() {
@@ -6237,8 +6657,12 @@ function leaveParty() {
       }
     }
   }
+  // Cancel the scheduled onDisconnect cleanup — we're leaving cleanly now.
+  if (db && party.code && party.memberId) {
+    try { db.ref(`parties/${party.code}/members/${party.memberId}`).onDisconnect().cancel(); } catch (e) {}
+  }
   cleanupPartyListeners();
-  party = { code: null, isHost: false, memberId: null, memberName: '', members: {}, movieCount: 35, movieIds: [], movies: [], myVotes: {}, currentMovieIndex: 0, status: 'none', listeners: [] };
+  party = { code: null, isHost: false, memberId: null, memberName: '', members: {}, movieCount: 35, movieIds: [], movies: [], myVotes: {}, currentMovieIndex: 0, status: 'none', listeners: [], hostId: null, reactionListener: null };
   showPartySub('partyHome');
 }
 
@@ -6251,47 +6675,51 @@ function startPartySwiping() {
   setupReactionListeners();
 }
 
+let reactionButtonsBound = false;
 function setupReactionListeners() {
   const reactionsRow = document.getElementById('partyReactionsRow');
   if (!reactionsRow) return;
+  // Bind the reaction buttons only once — they persist across cards, so
+  // re-binding each round would double- (then triple-) send every reaction.
+  if (reactionButtonsBound) return;
+  reactionButtonsBound = true;
 
   reactionsRow.querySelectorAll('.party-reaction-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const emoji = btn.dataset.reaction;
       const movieId = party.movies[party.currentMovieIndex]?.id;
       if (!movieId || !party.code) return;
-
-      // Show floating emoji locally
-      showFloatingEmoji(emoji);
-
-      // Send to Firebase if available
+      showFloatingEmoji(emoji); // show locally immediately
       if (db) {
         try {
           await db.ref(`parties/${party.code}/reactions/${movieId}/${party.memberId}`).set({
-            emoji: emoji,
-            timestamp: Date.now()
+            emoji, timestamp: Date.now()
           });
-        } catch (e) {
-          console.error('Reaction send error:', e);
-        }
+        } catch (e) { console.error('Reaction send error:', e); }
       }
     });
   });
+}
 
-  // Listen for reactions from other members
-  if (db && party.code) {
-    const movieId = party.movies[party.currentMovieIndex]?.id;
-    if (movieId) {
-      const ref = db.ref(`parties/${party.code}/reactions/${movieId}`);
-      const listener = ref.on('child_added', (snap) => {
-        const data = snap.val();
-        if (data && data.emoji && data.timestamp && Date.now() - data.timestamp < 5000) {
-          showFloatingEmoji(data.emoji);
-        }
-      });
-      party.listeners.push({ ref, event: 'child_added' });
-    }
+// Subscribe to the CURRENT movie's reactions, re-binding as the group advances
+// (the old code only ever listened to the first movie's reactions).
+function subscribeReactionsForCurrent() {
+  if (!db || !party.code) return;
+  if (party.reactionListener) {
+    try { party.reactionListener.ref.off('child_added', party.reactionListener.cb); } catch (e) {}
+    party.reactionListener = null;
   }
+  const movieId = party.movies[party.currentMovieIndex]?.id;
+  if (!movieId) return;
+  const ref = db.ref(`parties/${party.code}/reactions/${movieId}`);
+  const cb = ref.on('child_added', (snap) => {
+    if (snap.key === party.memberId) return; // I already saw my own
+    const data = snap.val();
+    if (data && data.emoji && data.timestamp && Date.now() - data.timestamp < 5000) {
+      showFloatingEmoji(data.emoji);
+    }
+  });
+  party.reactionListener = { ref, cb };
 }
 
 function showFloatingEmoji(emoji) {
@@ -6336,12 +6764,12 @@ function renderPartyCard() {
 
   const streamingRow = (movie.streaming || []).map(s => {
     const c = STREAMING_COLORS[s] || '#666';
-    return `<span style="display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;color:#fff;background:${c};margin-right:4px;">${s}</span>`;
+    return `<span style="display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;color:#fff;background:${c};margin-right:4px;">${escapeHtml(s)}</span>`;
   }).join('');
 
   const posterHTML = movie.poster
-    ? `<img class="card-poster-img" src="${movie.poster}" alt="${movie.title}" draggable="false" referrerpolicy="no-referrer">`
-    : `<div class="card-poster-placeholder" style="background:linear-gradient(135deg, #333, #555)">${(movie.title || '').split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('')}</div>`;
+    ? `<img class="card-poster-img" src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)}" draggable="false" referrerpolicy="no-referrer">`
+    : `<div class="card-poster-placeholder" style="background:linear-gradient(135deg, #333, #555)">${escapeHtml((movie.title || '').split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join(''))}</div>`;
 
   container.innerHTML = `
     <div class="movie-card entering" id="partyActiveCard">
@@ -6349,8 +6777,8 @@ function renderPartyCard() {
         ${posterHTML}
         <div class="card-streaming-row">${streamingRow}</div>
         <div class="card-info" id="partyCardInfo">
-          <span class="card-title">${movie.title}</span><span class="card-year-inline">${movie.year || ''}</span>
-          <div class="card-synopsis-preview">${movie.synopsis || ''}</div>
+          <span class="card-title">${escapeHtml(movie.title)}</span><span class="card-year-inline">${escapeHtml(String(movie.year || ''))}</span>
+          <div class="card-synopsis-preview">${escapeHtml(movie.synopsis || '')}</div>
         </div>
       </div>
       <div class="swipe-overlay like" id="partyOverlayLike">YES</div>
@@ -6358,6 +6786,7 @@ function renderPartyCard() {
     </div>`;
 
   setupPartySwipeGesture(document.getElementById('partyActiveCard'));
+  subscribeReactionsForCurrent(); // rebind reactions to the movie now on screen
 }
 
 function setupPartySwipeGesture(card) {
@@ -6423,12 +6852,11 @@ function setupPartySwipeGesture(card) {
 
   function isInteractive(el) { return el.closest('.card-info'); }
 
-  card.addEventListener('mousedown', e => { if (isInteractive(e.target)) return; e.preventDefault(); onStart(e.clientX, e.clientY); });
-  document.addEventListener('mousemove', e => { if (isDragging) { e.preventDefault(); onMove(e.clientX, e.clientY); }});
-  document.addEventListener('mouseup', () => { if (isDragging) onEnd(); });
+  card.addEventListener('mousedown', e => { if (isInteractive(e.target)) return; e.preventDefault(); activeSwipe = { onMove, onEnd, isDragging: () => isDragging }; onStart(e.clientX, e.clientY); });
   card.addEventListener('touchstart', e => { if (isInteractive(e.target)) return; const t = e.touches[0]; onStart(t.clientX, t.clientY); }, { passive: true });
   card.addEventListener('touchmove', e => { const t = e.touches[0]; onMove(t.clientX, t.clientY); }, { passive: true });
   card.addEventListener('touchend', () => onEnd());
+  card.addEventListener('touchcancel', () => { if (isDragging) onEnd(); });
 }
 
 async function submitPartyVote(movieId, decision) {
@@ -6758,9 +7186,12 @@ document.getElementById('resultsNewBtn').addEventListener('click', async () => {
   }
 
   // Check if user already skipped or logged in before
-  if (localStorage.getItem('flickpick_auth')) {
+  const savedAuth = localStorage.getItem('flickpick_auth');
+  if (savedAuth) {
     authScreen.classList.add('hidden');
     setTimeout(() => authScreen.style.display = 'none', 400);
+    // Restore the stored identity so a returning guest isn't shown "Armin".
+    try { applyProfileIdentity(JSON.parse(savedAuth).name); } catch (e) {}
   }
 
   // Tab switching
@@ -6775,18 +7206,29 @@ document.getElementById('resultsNewBtn').addEventListener('click', async () => {
     });
   });
 
+  // Set the profile name, avatar initial, and @handle (derived from the name).
+  // Guests get a neutral identity instead of the hardcoded "Armin / @armin_picks".
+  function applyProfileIdentity(name) {
+    const isGuest = !name || name === 'Guest';
+    const displayName = isGuest ? 'Guest' : name;
+    const handle = isGuest
+      ? '@guest'
+      : '@' + displayName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || '@user';
+    const nameEl = document.querySelector('.profile-name');
+    const avatarEl = document.querySelector('.profile-avatar');
+    const handleEl = document.querySelector('.profile-handle');
+    if (nameEl) nameEl.textContent = displayName;
+    if (avatarEl) avatarEl.textContent = displayName.charAt(0).toUpperCase();
+    if (handleEl) handleEl.textContent = handle;
+  }
+
   function dismissAuth(displayName) {
     localStorage.setItem('flickpick_auth', JSON.stringify({
       loggedIn: true,
       name: displayName || 'Guest',
       timestamp: Date.now()
     }));
-    if (displayName) {
-      const profileName = document.querySelector('.profile-name');
-      const profileAvatar = document.querySelector('.profile-avatar');
-      if (profileName) profileName.textContent = displayName;
-      if (profileAvatar) profileAvatar.textContent = displayName.charAt(0).toUpperCase();
-    }
+    applyProfileIdentity(displayName);
     authScreen.classList.add('hidden');
     setTimeout(() => authScreen.style.display = 'none', 400);
   }

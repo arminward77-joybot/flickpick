@@ -26,3 +26,6 @@ yarn-error.log*
 
 # Local helper script (stays on your machine)
 push.command
+
+# old backup build — do not serve
+index copy.html
