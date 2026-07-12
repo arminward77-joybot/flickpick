@@ -2680,6 +2680,15 @@ body {
   text-align: center;
   min-height: 16px;
 }
+.auth-forgot {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 4px;
+}
+.auth-forgot:hover, .auth-forgot:active { color: var(--accent); }
 .auth-footer {
   margin-top: 16px;
   font-size: 12px;
@@ -2695,6 +2704,266 @@ body {
 [data-theme="light"] .auth-overlay { background: var(--bg-primary); }
 [data-theme="light"] .auth-input { background: var(--bg-secondary); border-color: rgba(0,0,0,0.1); }
 [data-theme="light"] .auth-social-btn { background: var(--bg-secondary); border-color: rgba(0,0,0,0.1); }
+
+/* ============================================================
+   NEW FEATURES (Jul 2026): search, people pages, onboarding,
+   provider logos, streak chip, skeletons, party results hero
+   ============================================================ */
+
+/* --- Header: streak chip + search button --- */
+.header-streak {
+  display: flex; align-items: center; gap: 3px;
+  height: 36px; padding: 0 12px; border-radius: 18px;
+  background: rgba(255,152,0,0.14);
+  font-size: 14px; font-weight: 800; color: #ffb02e;
+  -webkit-user-select: none; user-select: none;
+}
+.search-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+  -webkit-user-select: none; user-select: none;
+}
+.search-btn:active { transform: scale(0.9); }
+
+/* --- Provider logos --- */
+.card-streaming-row .provider-logo {
+  width: 28px; height: 28px; border-radius: 7px; overflow: hidden;
+  display: inline-flex; box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.18); pointer-events: none;
+}
+.card-streaming-row .provider-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.stream-logo-badge {
+  width: 34px; height: 34px; border-radius: 9px; overflow: hidden;
+  display: inline-flex; box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.14); text-decoration: none;
+  transition: transform 0.15s;
+}
+.stream-logo-badge:active { transform: scale(0.92); }
+.stream-logo-badge img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.where-to-watch {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 700; color: var(--accent);
+  text-decoration: none; padding: 8px 2px; cursor: pointer;
+}
+
+/* --- Detail panel: action row + tappable people --- */
+.detail-action-row { display: flex; gap: 10px; margin: 14px 0 4px; }
+.detail-action-btn {
+  flex: 1; padding: 13px 10px; border-radius: 12px; border: none;
+  background: var(--bg-surface); color: var(--text-primary);
+  font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.detail-action-btn:active { transform: scale(0.97); }
+.detail-action-btn.primary { background: var(--accent); color: #fff; }
+.detail-action-btn.saved { background: rgba(48,197,143,0.16); color: #30c58f; }
+.detail-director {
+  font-size: 13px; color: var(--text-secondary); margin-top: 4px;
+}
+.detail-director .person-link { color: var(--accent); font-weight: 600; cursor: pointer; }
+.cast-card[data-person-id] { cursor: pointer; transition: transform 0.15s; }
+.cast-card[data-person-id]:active { transform: scale(0.96); }
+
+/* --- Search overlay --- */
+.search-overlay {
+  /* Above screens/header (100) but BELOW the detail panel (111) so a tapped
+     result's detail sheet opens on top of the search results. */
+  position: absolute; inset: 0; z-index: 105;
+  background: var(--bg-primary);
+  display: none; flex-direction: column;
+  padding: calc(14px + var(--safe-top, 0px)) 16px 0;
+}
+.search-overlay.open { display: flex; }
+.search-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.search-input {
+  flex: 1; background: var(--bg-surface); border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: 12px; padding: 13px 14px; font-size: 15px; color: var(--text-primary);
+  outline: none; font-family: inherit;
+}
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--text-muted); }
+.search-cancel { font-size: 14px; font-weight: 600; color: var(--accent); cursor: pointer; padding: 8px 2px; white-space: nowrap; }
+.search-results { flex: 1; overflow-y: auto; padding-bottom: calc(80px + var(--safe-bottom, 0px)); -webkit-overflow-scrolling: touch; }
+.search-hint { text-align: center; color: var(--text-muted); font-size: 14px; padding: 40px 20px; }
+.search-section-label {
+  font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--text-muted); margin: 14px 0 8px;
+}
+.search-row {
+  display: flex; align-items: center; gap: 12px; padding: 8px 6px;
+  border-radius: 12px; cursor: pointer; transition: background 0.15s;
+}
+.search-row:active { background: var(--bg-surface); }
+.search-row-poster {
+  width: 46px; height: 69px; border-radius: 8px; object-fit: cover; flex: none;
+  background: linear-gradient(135deg,#333,#555);
+}
+.search-row-poster.person { height: 46px; border-radius: 50%; }
+.search-row-info { flex: 1; min-width: 0; }
+.search-row-title { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-row-meta { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-row-badge { font-size: 11px; font-weight: 700; color: var(--text-muted); background: var(--bg-surface); border-radius: 6px; padding: 3px 7px; flex: none; }
+
+/* --- Person (actor/director) panel --- */
+.person-panel {
+  /* Above search (105), below the movie detail panel (111): person → movie
+     detail stacks on top; movie detail → person swaps via close-then-open. */
+  position: absolute; inset: 0; z-index: 106;
+  background: var(--bg-primary);
+  display: none; flex-direction: column;
+  transform: translateY(24px); opacity: 0;
+  transition: transform 0.25s, opacity 0.25s;
+}
+.person-panel.open { display: flex; transform: translateY(0); opacity: 1; }
+.person-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(12px + var(--safe-top, 0px)) 16px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.person-close {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--bg-surface);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 15px; flex: none;
+}
+.person-header-name { font-size: 17px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.person-body { flex: 1; overflow-y: auto; padding: 16px 16px calc(90px + var(--safe-bottom, 0px)); -webkit-overflow-scrolling: touch; }
+.person-hero { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+.person-photo {
+  width: 96px; height: 96px; border-radius: 50%; object-fit: cover; flex: none;
+  background: linear-gradient(135deg,#333,#555);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; font-weight: 800; color: rgba(255,255,255,0.75);
+}
+.person-meta-name { font-size: 20px; font-weight: 800; }
+.person-meta-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
+.person-bio { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+.person-bio.clamped { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.person-bio-more { font-size: 13px; font-weight: 700; color: var(--accent); cursor: pointer; padding: 6px 0; }
+.filmography-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.filmography-card { cursor: pointer; transition: transform 0.15s; }
+.filmography-card:active { transform: scale(0.96); }
+.filmography-poster {
+  width: 100%; aspect-ratio: 2/3; border-radius: 10px; object-fit: cover;
+  background: linear-gradient(135deg,#333,#555); display: block;
+}
+.filmography-title { font-size: 12px; font-weight: 600; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.filmography-year { font-size: 11px; color: var(--text-muted); }
+
+/* --- Onboarding (first-run taste picker) --- */
+.onboarding-overlay {
+  position: absolute; inset: 0; z-index: 495;
+  background: var(--bg-primary);
+  display: none; flex-direction: column;
+  opacity: 0; transition: opacity 0.3s;
+}
+.onboarding-overlay.open { display: flex; opacity: 1; }
+.onboarding-scroll { flex: 1; overflow-y: auto; padding: calc(28px + var(--safe-top, 0px)) 22px 24px; -webkit-overflow-scrolling: touch; }
+.onboarding-title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+.onboarding-sub { font-size: 14px; color: var(--text-secondary); margin: 6px 0 20px; line-height: 1.5; }
+.onboarding-step-label {
+  font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--accent); margin: 20px 0 10px;
+}
+.onboarding-genres { display: flex; flex-wrap: wrap; gap: 8px; }
+.ob-genre-chip {
+  padding: 9px 15px; border-radius: 20px; background: var(--bg-surface);
+  border: 1.5px solid rgba(255,255,255,0.08); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; -webkit-user-select: none; user-select: none;
+}
+.ob-genre-chip.active { background: rgba(233,69,96,0.18); border-color: var(--accent); color: var(--accent); }
+.onboarding-services { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.ob-service-chip {
+  display: flex; align-items: center; gap: 8px; padding: 11px 13px; border-radius: 12px;
+  background: var(--bg-surface); border: 1.5px solid rgba(255,255,255,0.08);
+  font-size: 13.5px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  -webkit-user-select: none; user-select: none;
+}
+.ob-service-chip.active { border-color: var(--accent); background: rgba(233,69,96,0.12); }
+.ob-service-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.onboarding-region-select {
+  width: 100%; background: var(--bg-surface); color: var(--text-primary);
+  border: 1.5px solid rgba(255,255,255,0.08); border-radius: 12px;
+  padding: 12px; font-size: 14px; font-family: inherit; outline: none;
+}
+.onboarding-footer {
+  padding: 14px 22px calc(18px + var(--safe-bottom, 0px));
+  border-top: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 10px;
+}
+.onboarding-start-btn {
+  width: 100%; padding: 15px; border-radius: 14px; border: none;
+  background: var(--accent); color: #fff; font-size: 16px; font-weight: 800;
+  cursor: pointer; font-family: inherit; transition: transform 0.15s, opacity 0.15s;
+}
+.onboarding-start-btn:active { transform: scale(0.98); }
+.onboarding-skip-btn {
+  background: none; border: none; color: var(--text-muted); font-size: 14px;
+  font-weight: 600; cursor: pointer; font-family: inherit; padding: 6px;
+}
+
+/* --- Card loading skeleton + poster fade-in --- */
+@keyframes skeletonShimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.card-skeleton {
+  width: 100%; height: 100%; border-radius: 20px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.10) 37%, rgba(255,255,255,0.04) 63%);
+  background-size: 800px 100%;
+  animation: skeletonShimmer 1.3s infinite linear;
+  display: flex; align-items: flex-end; padding: 22px;
+}
+.card-skeleton-lines { width: 100%; }
+.card-skeleton-line {
+  height: 14px; border-radius: 7px; background: rgba(255,255,255,0.08); margin-top: 10px;
+}
+.card-skeleton-line.w60 { width: 60%; height: 20px; }
+.card-skeleton-line.w90 { width: 90%; }
+.card-skeleton-line.w75 { width: 75%; }
+
+/* --- Party results: hero match card + schedule sheet --- */
+.results-hero {
+  border-radius: 18px; overflow: hidden; margin-bottom: 16px; position: relative;
+  background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.08);
+}
+.results-hero-banner {
+  position: relative; width: 100%; aspect-ratio: 16/10; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.results-hero-bg {
+  position: absolute; inset: -12px; background-size: cover; background-position: center;
+  filter: blur(14px) brightness(0.45); transform: scale(1.1);
+}
+.results-hero-poster {
+  position: relative; height: 86%; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.55);
+}
+.results-hero-body { padding: 14px 16px 16px; }
+.results-hero-kicker { font-size: 12px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); }
+.results-hero-title { font-size: 20px; font-weight: 800; margin-top: 4px; letter-spacing: -0.3px; }
+.results-hero-meta { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+.results-hero-votes { font-size: 13.5px; font-weight: 700; color: #30c58f; margin-top: 6px; }
+.results-hero-actions { display: flex; gap: 8px; margin-top: 12px; }
+.results-hero-btn {
+  flex: 1; padding: 11px 8px; border-radius: 11px; border: none; font-family: inherit;
+  font-size: 13px; font-weight: 700; cursor: pointer; background: var(--bg-primary);
+  color: var(--text-primary); transition: transform 0.15s;
+}
+.results-hero-btn:active { transform: scale(0.96); }
+.results-hero-btn.primary { background: var(--accent); color: #fff; }
+.schedule-row { display: flex; gap: 10px; margin: 14px 0 4px; }
+.schedule-input {
+  flex: 1; background: var(--bg-surface); color: var(--text-primary);
+  border: 1.5px solid rgba(255,255,255,0.1); border-radius: 12px;
+  padding: 12px; font-size: 14px; font-family: inherit; outline: none;
+  color-scheme: dark;
+}
+.schedule-input:focus { border-color: var(--accent); }
+[data-theme="light"] .schedule-input { color-scheme: light; }
+
+[data-theme="light"] .search-overlay, [data-theme="light"] .person-panel, [data-theme="light"] .onboarding-overlay { background: var(--bg-primary); }
+[data-theme="light"] .search-btn, [data-theme="light"] .rewind-btn, [data-theme="light"] .filter-btn { background: rgba(0,0,0,0.06); }
+[data-theme="light"] .search-input, [data-theme="light"] .ob-genre-chip, [data-theme="light"] .ob-service-chip, [data-theme="light"] .onboarding-region-select, [data-theme="light"] .schedule-input { border-color: rgba(0,0,0,0.12); }
 </style>
 </head>
 <body>
@@ -2729,6 +2998,7 @@ body {
       <input class="auth-input" id="authLoginPassword" type="password" placeholder="Password" autocomplete="current-password">
       <div class="auth-error" id="authLoginError"></div>
       <button class="auth-submit" id="authLoginBtn">Log In</button>
+      <div class="auth-forgot" id="authForgot">Forgot password?</div>
     </div>
 
     <div class="auth-divider">
@@ -2760,6 +3030,10 @@ body {
     </div>
     <div class="header-subtitle" id="headerSubtitle">Discover</div>
     <div class="header-actions" id="headerActions">
+      <div class="header-streak" id="headerStreak" title="Daily swipe streak" style="display:none">🔥<span id="headerStreakCount">0</span></div>
+      <div class="search-btn" id="searchBtn" title="Search movies &amp; people" aria-label="Search movies and people">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+      </div>
       <div class="rewind-btn disabled" id="rewindBtn" title="Undo last swipe" aria-label="Undo last swipe">↩</div>
       <div class="filter-btn" id="filterBtn" title="Filter movies">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
@@ -3120,7 +3394,7 @@ body {
         </div>
       </div>
 
-      <button class="signout-btn">Sign Out</button>
+      <button class="signout-btn" id="signoutBtn">Sign Out</button>
     </div>
   </div>
 
@@ -3198,6 +3472,61 @@ body {
       <div class="detail-header-title" id="detailHeaderTitle"></div>
     </div>
     <div class="detail-body" id="detailBody"></div>
+  </div>
+
+  <!-- ===== SEARCH OVERLAY (Discover search: movies + people) ===== -->
+  <div class="search-overlay" id="searchOverlay">
+    <div class="search-bar-row">
+      <input class="search-input" id="searchInput" placeholder="Search movies, actors, directors..." autocomplete="off" enterkeyhint="search">
+      <span class="search-cancel" id="searchCancel">Cancel</span>
+    </div>
+    <div class="search-results" id="searchResults">
+      <div class="search-hint">Find a specific movie, or explore an actor's filmography.</div>
+    </div>
+  </div>
+
+  <!-- ===== PERSON PANEL (actor / director bio + filmography) ===== -->
+  <div class="person-panel" id="personPanel">
+    <div class="person-header">
+      <div class="person-close" id="personClose" aria-label="Close person details">&#10005;</div>
+      <div class="person-header-name" id="personHeaderName"></div>
+    </div>
+    <div class="person-body" id="personBody"></div>
+  </div>
+
+  <!-- ===== ONBOARDING (first-run taste picker) ===== -->
+  <div class="onboarding-overlay" id="onboardingOverlay">
+    <div class="onboarding-scroll">
+      <div class="onboarding-title">Make it yours &#127871;</div>
+      <div class="onboarding-sub">20 seconds of setup so your very first deck is full of movies you'll actually like. Everything here can be changed later.</div>
+      <div class="onboarding-step-label">1 &middot; Genres you love</div>
+      <div class="onboarding-genres" id="onboardingGenres"></div>
+      <div class="onboarding-step-label">2 &middot; Your streaming services</div>
+      <div class="onboarding-services" id="onboardingServices"></div>
+      <div class="onboarding-step-label">3 &middot; Your region</div>
+      <select class="onboarding-region-select" id="onboardingRegion" aria-label="Streaming region"></select>
+    </div>
+    <div class="onboarding-footer">
+      <button class="onboarding-start-btn" id="onboardingStart">Start Swiping</button>
+      <button class="onboarding-skip-btn" id="onboardingSkip">Skip — just show me movies</button>
+    </div>
+  </div>
+
+  <!-- ===== SCHEDULE MOVIE NIGHT MODAL ===== -->
+  <div class="modal-overlay" id="scheduleModal">
+    <div class="modal-card">
+      <div class="modal-title">Schedule Movie Night</div>
+      <div class="modal-body">
+        <p style="margin-top:0">Pick when you're all watching — everyone in the party sees the countdown.</p>
+        <div class="schedule-row">
+          <input type="date" class="schedule-input" id="scheduleDate" aria-label="Movie night date">
+          <input type="time" class="schedule-input" id="scheduleTime" aria-label="Movie night time">
+        </div>
+        <div class="auth-error" id="scheduleError"></div>
+        <button class="modal-btn" id="scheduleConfirmBtn" style="background:var(--accent);color:#fff;font-weight:700">Set Movie Night</button>
+      </div>
+      <button class="modal-btn secondary" id="scheduleModalClose">Cancel</button>
+    </div>
   </div>
 
   <!-- ===== FAB (floating above all screens) ===== -->
@@ -3330,6 +3659,13 @@ const TMDB = {
       if (likeIds.length) params.set('with_genres', likeIds.join('|')); // OR — broaden toward taste, not narrow
       const avoidIds = profile.avoidGenreNames.map(toId).filter(Boolean);
       if (avoidIds.length) params.set('without_genres', avoidIds.join(','));
+    } else if (!manualGenre && (!profile || !profile.hasSignal)
+               && typeof state !== 'undefined' && state.onboardingGenres && state.onboardingGenres.length) {
+      // Cold start with onboarding picks: bias the very first decks toward the
+      // genres chosen in the taste picker (OR semantics — broad, not narrow).
+      // Swipe signal takes over automatically once profile.hasSignal is true.
+      const obIds = state.onboardingGenres.map(n => this.genreIdFor(n)).filter(Boolean);
+      if (obIds.length) params.set('with_genres', obIds.join('|'));
     }
     return params;
   },
@@ -3385,6 +3721,25 @@ const TMDB = {
     return (data.results || []).map(m => this.mapMovie(m));
   },
 
+  // Search movies + people in one query (Discover search).
+  // NOTE: goes direct to TMDB — add a /search route to flickpick-api when wiring the proxy.
+  async searchMulti(query) {
+    const params = new URLSearchParams({
+      query, page: '1', include_adult: 'false',
+      api_key: this.API_KEY, language: 'en-US',
+    });
+    const resp = await fetch(`https://api.themoviedb.org/3/search/multi?${params}`);
+    const data = await resp.json();
+    return data.results || [];
+  },
+
+  // Person bio + full movie credits (people pages).
+  // NOTE: direct to TMDB — add a /person route to flickpick-api when wiring the proxy.
+  async fetchPerson(personId) {
+    const resp = await fetch(`https://api.themoviedb.org/3/person/${personId}?api_key=${this.API_KEY}&language=en-US&append_to_response=movie_credits`);
+    return resp.json();
+  },
+
   mapMovie(tmdb) {
     return {
       id: tmdb.id,
@@ -3397,7 +3752,10 @@ const TMDB = {
       poster: tmdb.poster_path ? `${this.IMG}/w500${tmdb.poster_path}` : null,
       backdrop: tmdb.backdrop_path ? `${this.IMG}/w780${tmdb.backdrop_path}` : null,
       streaming: [],
+      providers: [],
+      watchLink: null,
       cast: [],
+      director: null,
       _tmdbId: tmdb.id,
       _detailsLoaded: false,
     };
@@ -3406,21 +3764,45 @@ const TMDB = {
   enrichFromDetails(movie, details) {
     if (details.runtime) movie.runtime = `${details.runtime} min`;
     if (details.genres) movie.genres = details.genres.map(g => g.name);
-    // Cast
+    // Cast (with TMDB person ids so cast cards can open a filmography page)
     if (details.credits && details.credits.cast) {
       movie.cast = details.credits.cast.slice(0, 6).map(c => ({
+        id: c.id,
         name: c.name,
         role: c.character || '',
         profilePath: c.profile_path ? `${this.IMG}/w185${c.profile_path}` : null,
       }));
+    }
+    // Director (tappable in the detail panel)
+    if (details.credits && details.credits.crew) {
+      const dir = details.credits.crew.find(c => c.job === 'Director');
+      if (dir) movie.director = { id: dir.id, name: dir.name };
     }
     // Streaming providers for the user's region (falls back to US)
     if (details['watch/providers'] && details['watch/providers'].results) {
       const region = (typeof state !== 'undefined' && state.region) || 'US';
       const reg = details['watch/providers'].results[region] || details['watch/providers'].results.US;
       if (reg) {
-        const providers = [...(reg.flatrate || []), ...(reg.ads || [])];
-        movie.streaming = providers.map(p => p.provider_name).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5);
+        const raw = [...(reg.flatrate || []), ...(reg.ads || [])];
+        const seen = new Set();
+        movie.providers = [];
+        raw.forEach(p => {
+          if (!p) return;
+          const key = p.provider_id || p.provider_name;
+          if (seen.has(key)) return;
+          seen.add(key);
+          movie.providers.push({
+            name: p.provider_name,
+            logo: p.logo_path ? `${this.IMG}/w92${p.logo_path}` : null,
+          });
+        });
+        movie.providers = movie.providers.slice(0, 5);
+        movie.streaming = movie.providers.map(p => p.name);
+        // TMDB's per-region "where to watch" page (JustWatch-powered) — deep link target.
+        movie.watchLink = reg.link || null;
+      }
+      if (!movie.watchLink) {
+        movie.watchLink = `https://www.themoviedb.org/movie/${movie._tmdbId || movie.id}/watch?locale=${region}`;
       }
     }
     movie._detailsLoaded = true;
@@ -3735,6 +4117,7 @@ let state = {
   dislikedGenres: {},
   dislikedDecades: {},
   region: 'US',
+  onboardingGenres: [],
 };
 
 // Bump when the persisted shape changes so we can migrate old records instead
@@ -3771,10 +4154,17 @@ try {
     state.dislikedGenres = saved.dislikedGenres || {};
     state.dislikedDecades = saved.dislikedDecades || {};
     state.region = saved.region || 'US';
+    state.onboardingGenres = saved.onboardingGenres || [];
   }
 } catch(e) {}
 
 function saveState() {
+  persistLocal();
+  // Also sync to Firestore if user is logged in
+  if (typeof scheduleCloudSave === 'function') scheduleCloudSave();
+}
+
+function persistLocal() {
   try {
     localStorage.setItem('flickpick_state', JSON.stringify({
       version: STATE_VERSION,
@@ -3799,10 +4189,9 @@ function saveState() {
       friends: state.friends,
       dislikedGenres: state.dislikedGenres,
       dislikedDecades: state.dislikedDecades,
+      onboardingGenres: state.onboardingGenres,
     }));
   } catch(e) {}
-  // Also sync to Firestore if user is logged in
-  if (typeof scheduleCloudSave === 'function') scheduleCloudSave();
 }
 
 function markMovieAsSeen(movieId) {
@@ -3811,10 +4200,22 @@ function markMovieAsSeen(movieId) {
   }
 }
 
+// Keep the Discover-header flame chip in sync with the daily streak (F3).
+function updateStreakChip() {
+  const chip = document.getElementById('headerStreak');
+  const count = document.getElementById('headerStreakCount');
+  if (!chip || !count) return;
+  const n = state.streakCount || 0;
+  count.textContent = n;
+  chip.style.display = n > 0 ? 'flex' : 'none';
+  chip.title = n > 0 ? `Daily swipe streak: ${n} day${n === 1 ? '' : 's'}` : 'Daily swipe streak';
+}
+
 function updateSwipeStreak() {
   const today = new Date().toISOString().split('T')[0];
   if (state.lastSwipeDate === today) {
     // Already swiped today, don't increment
+    updateStreakChip();
     return;
   }
   if (!state.lastSwipeDate) {
@@ -3833,6 +4234,7 @@ function updateSwipeStreak() {
     }
   }
   state.lastSwipeDate = today;
+  updateStreakChip();
 }
 
 // ============================================================
@@ -3860,6 +4262,9 @@ tabItems.forEach(tab => {
     headerSubtitle.textContent = tabNames[target];
     if (target === 'watchlist') renderWatchlist();
     if (target === 'profile') renderProfile();
+    // Leaving Discover closes its full-screen overlays (search / person page)
+    if (typeof closeSearchOverlay === 'function') closeSearchOverlay();
+    if (typeof closePersonPanel === 'function') closePersonPanel();
     document.getElementById('fabContainer').style.display = target === 'discover' ? 'block' : 'none';
     document.getElementById('headerActions').style.display = target === 'discover' ? 'flex' : 'none';
   });
@@ -3997,13 +4402,25 @@ async function filterDistinctPhotos(posterUrl, candidates, max) {
 }
 // --- PHOTO-DEDUP-END ---
 
+// Deck-card streaming row: real provider logos when we have them (visual only —
+// the card is a swipe surface; tappable deep links live in the detail panel).
 function buildStreamingBadges(movie) {
-  if (movie._detailsLoaded && (!movie.streaming || movie.streaming.length === 0)) {
+  if (movie.providers && movie.providers.length > 0 && movie.providers.some(p => p.logo)) {
+    return movie.providers.map(p => p.logo
+      ? `<span class="provider-logo" title="${escapeHtml(p.name)}"><img src="${escapeHtml(p.logo)}" alt="${escapeHtml(p.name)}" referrerpolicy="no-referrer"></span>`
+      : `<span class="stream-badge" style="background:${STREAMING_COLORS[p.name] || '#555'}">${escapeHtml(p.name)}</span>`
+    ).join('');
+  }
+  // Legacy path: names only (saved movies from older sessions, party movieData)
+  if (movie.streaming && movie.streaming.length > 0) {
+    return movie.streaming.map(s =>
+      `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'}">${escapeHtml(s)}</span>`
+    ).join('');
+  }
+  if (movie._detailsLoaded) {
     return '<span class="stream-badge" style="background:#555;font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff">For Digital Rent or Purchase</span>';
   }
-  return (movie.streaming || []).map(s =>
-    `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'}">${s}</span>`
-  ).join('');
+  return '';
 }
 
 function shareMovie(movie) {
@@ -4012,6 +4429,26 @@ function shareMovie(movie) {
     navigator.share({ title: movie.title, text: `Check out ${movie.title} on FlickPick!`, url: url }).catch(() => {});
   } else {
     navigator.clipboard.writeText(url).then(() => showToast('TMDB link copied!', 'info')).catch(() => showToast('Could not copy link', 'info'));
+  }
+}
+
+// Shimmering placeholder card shown while the deck loads (F11).
+function skeletonCardHTML(label) {
+  return `
+    <div class="card-skeleton" role="status" aria-label="${label || 'Loading movies'}">
+      <div class="card-skeleton-lines">
+        <div class="card-skeleton-line w60"></div>
+        <div class="card-skeleton-line w90"></div>
+        <div class="card-skeleton-line w75"></div>
+      </div>
+    </div>`;
+}
+
+// Warm the next posters so the card after a swipe appears instantly (F11).
+function preloadUpcomingPosters(index) {
+  for (let i = 1; i <= 2; i++) {
+    const next = MOVIES[index + i];
+    if (next && next.poster) { const img = new Image(); img.src = next.poster; }
   }
 }
 
@@ -4032,12 +4469,8 @@ function renderCard(index, animate = false) {
 
   if (index >= MOVIES.length) {
     if (moviesLoading) {
-      // Show loading state
-      cardContainer.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:16px">
-          <div style="font-size:48px">🎬</div>
-          <div style="color:var(--text-secondary);font-size:15px;font-weight:600">Loading movies...</div>
-        </div>`;
+      // Show loading state — shimmering card skeleton instead of a bare spinner
+      cardContainer.innerHTML = skeletonCardHTML();
       // Re-read the live index on each poll: if the user changed mood/filters
       // while we were loading, the deck was rebuilt at 0 and this stale index
       // would otherwise flash "All Caught Up" over a fresh deck.
@@ -4058,11 +4491,7 @@ function renderCard(index, animate = false) {
       const rb = document.getElementById('retryLoadBtn');
       if (rb) rb.addEventListener('click', async () => {
         loadError = false;
-        cardContainer.innerHTML = `
-          <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:16px">
-            <div style="font-size:48px">🎬</div>
-            <div style="color:var(--text-secondary);font-size:15px;font-weight:600">Loading movies...</div>
-          </div>`;
+        cardContainer.innerHTML = skeletonCardHTML();
         await loadMoreMovies(getCurrentFilters());
         renderCard(state.currentIndex, true);
       });
@@ -4088,8 +4517,8 @@ function renderCard(index, animate = false) {
   const streamingRow = buildStreamingBadges(movie);
 
   const posterHTML = movie.poster
-    ? `<img class="card-poster-img" src="${movie.poster}" alt="${movie.title}" draggable="false" referrerpolicy="no-referrer">`
-    : `<div class="card-poster-placeholder" style="background:linear-gradient(135deg, #333, #555)">${movie.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('')}</div>`;
+    ? `<img class="card-poster-img" src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)}" draggable="false" referrerpolicy="no-referrer">`
+    : `<div class="card-poster-placeholder" style="background:linear-gradient(135deg, #333, #555)">${escapeHtml(movie.title.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join(''))}</div>`;
 
   const genreText = (movie.genres || []).slice(0, 2).join(' · ');
 
@@ -4109,8 +4538,8 @@ function renderCard(index, animate = false) {
         <div class="card-streaming-row">${streamingRow}</div>
         <div class="card-share-btn" id="cardShareBtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></div>
         <div class="card-info" id="cardInfoTap">
-          <span class="card-title">${movie.title}</span><span class="card-year-inline">${movie.year || ''}</span>
-          <div class="card-synopsis-preview">${movie.synopsis}</div>
+          <span class="card-title">${escapeHtml(movie.title)}</span><span class="card-year-inline">${movie.year || ''}</span>
+          <div class="card-synopsis-preview">${escapeHtml(movie.synopsis)}</div>
           <div class="card-tap-hint">
             <span class="tap-arrow">&#9650;</span>
             <span>Tap for details</span>
@@ -4219,6 +4648,9 @@ function renderCard(index, animate = false) {
       }
     }).catch(() => {});
   }
+
+  // Warm the next posters so the card after a swipe appears instantly (F11)
+  preloadUpcomingPosters(index);
 }
 
 // ============================================================
@@ -4718,6 +5150,7 @@ function renderWatchlist() {
     { key: 'rating', label: '⭐ Rating' },
     { key: 'title', label: '🔤 Title' },
     { key: 'year', label: '📅 Year' },
+    { key: 'runtime', label: '⏱ Runtime' },
   ];
 
   let sortedItems = [...items];
@@ -4725,6 +5158,7 @@ function renderWatchlist() {
   else if (state.watchedSort === 'rating') sortedItems.sort((a, b) => b.stars - a.stars);
   else if (state.watchedSort === 'title') sortedItems.sort((a, b) => a.movie.title.localeCompare(b.movie.title));
   else if (state.watchedSort === 'year') sortedItems.sort((a, b) => (b.movie.year || 0) - (a.movie.year || 0));
+  else if (state.watchedSort === 'runtime') sortedItems.sort((a, b) => parseRuntimeMinutes(b.movie.runtime) - parseRuntimeMinutes(a.movie.runtime));
 
   const sortPills = sortOptions.map(o =>
     `<div class="sort-pill ${state.watchedSort === o.key ? 'active' : ''}" data-sort="${o.key}">${o.label}</div>`
@@ -4812,13 +5246,24 @@ function renderDetailContent(movie) {
   const genreChips = (movie.genres || []).map(g => `<span class="detail-genre-chip">${escapeHtml(g)}</span>`).join('');
   const retryHTML = '<span class="detail-retry" style="font-size:12px;color:var(--accent);cursor:pointer;font-weight:600">Couldn\'t load — tap to retry</span>';
 
+  // Where-to-watch deep link (TMDB's per-region watch page, JustWatch-powered)
+  const watchLink = movie.watchLink
+    || `https://www.themoviedb.org/movie/${movie._tmdbId || movie.id}/watch?locale=${(typeof state !== 'undefined' && state.region) || 'US'}`;
+  const linkAttrs = `href="${escapeHtml(watchLink)}" target="_blank" rel="noopener"`;
+
   let streamBadges;
-  if (movie._detailsLoaded && (!movie.streaming || movie.streaming.length === 0)) {
-    streamBadges = '<span class="stream-badge" style="background:#555;font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff;letter-spacing:0.3px">For Digital Rent or Purchase</span>';
+  if (movie.providers && movie.providers.length > 0 && movie.providers.some(p => p.logo)) {
+    // Tappable provider logos → open the where-to-watch page for this movie
+    streamBadges = movie.providers.map(p => p.logo
+      ? `<a class="stream-logo-badge" ${linkAttrs} title="Watch on ${escapeHtml(p.name)}"><img src="${escapeHtml(p.logo)}" alt="${escapeHtml(p.name)}" referrerpolicy="no-referrer"></a>`
+      : `<a class="stream-badge" ${linkAttrs} style="background:${STREAMING_COLORS[p.name] || '#555'};font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff;letter-spacing:0.3px;text-decoration:none">${escapeHtml(p.name)}</a>`
+    ).join('') + `<a class="where-to-watch" ${linkAttrs}>Where to watch &#8599;</a>`;
   } else if (movie.streaming && movie.streaming.length > 0) {
-    streamBadges = (movie.streaming || []).map(s =>
-      `<span class="stream-badge" style="background:${STREAMING_COLORS[s] || '#555'};font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff;letter-spacing:0.3px">${escapeHtml(s)}</span>`
-    ).join('');
+    streamBadges = movie.streaming.map(s =>
+      `<a class="stream-badge" ${linkAttrs} style="background:${STREAMING_COLORS[s] || '#555'};font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff;letter-spacing:0.3px;text-decoration:none">${escapeHtml(s)}</a>`
+    ).join('') + `<a class="where-to-watch" ${linkAttrs}>Where to watch &#8599;</a>`;
+  } else if (movie._detailsLoaded) {
+    streamBadges = `<a class="stream-badge" ${linkAttrs} style="background:#555;font-size:9px;font-weight:700;padding:4px 8px;border-radius:5px;color:#fff;letter-spacing:0.3px;text-decoration:none">For Digital Rent or Purchase &#8599;</a>`;
   } else {
     streamBadges = movie._detailsError ? retryHTML : '<span style="font-size:12px;color:var(--text-muted)">Loading streaming info...</span>';
   }
@@ -4829,7 +5274,7 @@ function renderDetailContent(movie) {
       ? `<img src="${escapeHtml(c.profilePath)}" style="width:38px;height:38px;border-radius:50%;object-fit:cover" referrerpolicy="no-referrer">`
       : castInitial;
     return `
-      <div class="cast-card">
+      <div class="cast-card" ${c.id ? `data-person-id="${c.id}" data-person-name="${escapeHtml(c.name)}" role="button" tabindex="0"` : ''}>
         <div class="cast-avatar">${avatarInner}</div>
         <div class="cast-info">
           <div class="cast-name">${escapeHtml(c.name)}</div>
@@ -4837,6 +5282,22 @@ function renderDetailContent(movie) {
         </div>
       </div>`;
   }).join('') || (movie._detailsError ? retryHTML : '<span style="font-size:12px;color:var(--text-muted)">Loading cast...</span>');
+
+  // Save / rate state for the action row
+  const inWatchlist = state.watchlist.some(w => w.movie.id === movie.id);
+  const watchedEntry = state.watched.find(w => w.movie.id === movie.id);
+  let saveBtnHTML;
+  if (watchedEntry) {
+    saveBtnHTML = `<button class="detail-action-btn saved" id="detailSaveBtn" data-mode="rated">&#9733; Rated ${parseFloat(watchedEntry.stars || 0).toFixed(1)} — edit</button>`;
+  } else if (inWatchlist) {
+    saveBtnHTML = `<button class="detail-action-btn saved" id="detailSaveBtn" data-mode="saved">&#10003; In Watchlist</button>`;
+  } else {
+    saveBtnHTML = `<button class="detail-action-btn primary" id="detailSaveBtn" data-mode="save">&#65291; Add to Watchlist</button>`;
+  }
+
+  const directorHTML = movie.director
+    ? `<div class="detail-director">Directed by <span class="person-link" data-person-id="${movie.director.id}" data-person-name="${escapeHtml(movie.director.name)}" role="button" tabindex="0">${escapeHtml(movie.director.name)}</span></div>`
+    : '';
 
   const detailPosterHTML = movie.poster
     ? `<img class="detail-mini-poster-img" src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)}" referrerpolicy="no-referrer">`
@@ -4854,10 +5315,16 @@ function renderDetailContent(movie) {
         </div>
         ${movie.runtime ? `<div style="font-size:13px;color:var(--text-muted)">${escapeHtml(String(movie.runtime))}</div>` : ''}
         <div class="detail-genres" style="margin-top:6px">${genreChips}</div>
+        ${directorHTML}
       </div>
     </div>
 
-    <div class="detail-streaming" style="margin-bottom:8px">${streamBadges}</div>
+    <div class="detail-action-row">
+      ${saveBtnHTML}
+      <button class="detail-action-btn" id="detailTrailerBtn">&#9654; Trailer</button>
+    </div>
+
+    <div class="detail-streaming" style="margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${streamBadges}</div>
 
     <div class="detail-section-label">Synopsis</div>
     <div class="detail-synopsis">${escapeHtml(movie.synopsis)}</div>
@@ -4883,6 +5350,34 @@ function renderDetailContent(movie) {
   // Retry loading details on tap (M3)
   const retryEl = detailBody.querySelector('.detail-retry');
   if (retryEl) retryEl.addEventListener('click', () => { openDetailPanel(movie); });
+
+  // Action row: save / edit rating / trailer
+  const saveBtn = detailBody.querySelector('#detailSaveBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const mode = saveBtn.dataset.mode;
+      if (mode === 'save') {
+        addToWatchlist(movie);
+        markMovieAsSeen(movie.id);
+        saveState();
+        renderDetailContent(movie); // refresh to "In Watchlist"
+      } else if (mode === 'saved') {
+        removeFromWatchlist(movie.id);
+        renderDetailContent(movie);
+      } else if (mode === 'rated') {
+        openRatingSheet(movie);
+      }
+    });
+  }
+  const trailerBtn = detailBody.querySelector('#detailTrailerBtn');
+  if (trailerBtn) trailerBtn.addEventListener('click', () => openTrailerFor(movie));
+
+  // People: cast cards + director open the person panel
+  detailBody.querySelectorAll('[data-person-id]').forEach(el => {
+    el.addEventListener('click', () => {
+      openPersonPanel(Number(el.dataset.personId), el.dataset.personName || '');
+    });
+  });
 }
 
 function closeDetailPanel() {
@@ -4891,8 +5386,11 @@ function closeDetailPanel() {
   detailOverlay.classList.remove('open');
   detailPanel.classList.remove('open');
 
-  // Restore FAB if on discover tab
-  if (state.activeTab === 'discover') {
+  // Restore FAB if on discover tab — unless another overlay is still covering it
+  const searchEl = document.getElementById('searchOverlay');
+  const personEl = document.getElementById('personPanel');
+  const covered = (searchEl && searchEl.classList.contains('open')) || (personEl && personEl.classList.contains('open'));
+  if (state.activeTab === 'discover' && !covered) {
     const fab = document.getElementById('fabContainer');
     if (fab) fab.style.display = 'block';
   }
@@ -4943,10 +5441,16 @@ const trailerOverlay = document.getElementById('trailerOverlay');
 const trailerContent = document.getElementById('trailerContent');
 const trailerClose = document.getElementById('trailerClose');
 
-fabMain.addEventListener('click', async () => {
+fabMain.addEventListener('click', () => {
   // Use the movie actually on screen — on a "Because You Liked" spotlight or a
   // watchlist-nudge card that isn't MOVIES[currentIndex].
   const movie = state.activeCardMovie || MOVIES[state.currentIndex];
+  if (!movie) return;
+  openTrailerFor(movie);
+});
+
+// Shared trailer player — used by the FAB, the detail panel, and party results.
+async function openTrailerFor(movie) {
   if (!movie) return;
 
   // Show loading overlay
@@ -4982,7 +5486,7 @@ fabMain.addEventListener('click', async () => {
         <div>Could not load trailer</div>
       </div>`;
   }
-});
+}
 
 function closeTrailer() {
   // Exit fullscreen if active
@@ -5118,6 +5622,11 @@ document.getElementById('sheetSubmit').addEventListener('click', () => {
   markAsWatched(state.sheetMovie, state.selectedStars, review);
   closeRatingSheet();
 
+  // If the detail panel is open on this movie, refresh its action row ("Rated x.x")
+  if (detailPanel.classList.contains('open') && state.sheetMovie) {
+    renderDetailContent(state.sheetMovie);
+  }
+
   if (MOVIES[state.currentIndex] && MOVIES[state.currentIndex].id === state.sheetMovie.id) {
     markMovieAsSeen(state.sheetMovie.id);
     updateSwipeStreak();
@@ -5247,15 +5756,20 @@ function renderProfile() {
       (w.movie.genres || []).forEach(g => { genreCounts[g] = (genreCounts[g] || 0) + 1; });
     });
     const sorted = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
-    const max = sorted[0][1];
-    genreChart.innerHTML = sorted.map(([genre, count]) => {
-      const pct = Math.round((count / max) * 100);
-      return `<div class="genre-bar-row">
-        <div class="genre-bar-label">${genre}</div>
-        <div class="genre-bar-track"><div class="genre-bar-fill" style="width:${pct}%"></div></div>
-        <div class="genre-bar-pct">${count}</div>
-      </div>`;
-    }).join('');
+    if (sorted.length === 0) {
+      // Every watched movie is missing genre data — treat like the empty state.
+      genreChart.innerHTML = '<div class="genre-chart-empty">Watch some movies to see your taste profile!</div>';
+    } else {
+      const max = sorted[0][1] || 1;
+      genreChart.innerHTML = sorted.map(([genre, count]) => {
+        const pct = Math.round((count / max) * 100);
+        return `<div class="genre-bar-row">
+          <div class="genre-bar-label">${genre}</div>
+          <div class="genre-bar-track"><div class="genre-bar-fill" style="width:${pct}%"></div></div>
+          <div class="genre-bar-pct">${count}</div>
+        </div>`;
+      }).join('');
+    }
   }
 
   // Streaming grid
@@ -5898,6 +6412,50 @@ function haptic(kind) {
 function openModal(id) { const m = document.getElementById(id); if (m) m.classList.add('open'); }
 function closeModal(id) { const m = document.getElementById(id); if (m) m.classList.remove('open'); }
 
+// Re-open the auth overlay (for guests signing in later, sign-out, re-auth flows).
+function showAuthScreen() {
+  const a = document.getElementById('authScreen');
+  if (a) { a.style.display = 'flex'; requestAnimationFrame(() => a.classList.remove('hidden')); }
+}
+
+// The Sign Out button doubles as the guests' way INTO the auth screen:
+// signed-in users sign out; guests get "Sign In or Create Account".
+function updateSignoutBtn() {
+  const btn = document.getElementById('signoutBtn');
+  if (!btn) return;
+  const user = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+  const signedIn = user && !user.isAnonymous;
+  btn.textContent = signedIn ? 'Sign Out' : 'Sign In or Create Account';
+}
+
+(function wireSignoutBtn() {
+  const btn = document.getElementById('signoutBtn');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const user = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+    const signedIn = user && !user.isAnonymous;
+    if (!signedIn) { showAuthScreen(); return; }
+    if (!confirm('Sign out of FlickPick? Your watchlist and ratings are saved to your account.')) return;
+    btn.disabled = true;
+    btn.textContent = 'Signing out...';
+    try {
+      // Flush any pending cloud save so the last few swipes aren't lost.
+      try { clearTimeout(cloudSaveTimer); await saveUserDataToFirestore(); } catch (e) {}
+      await auth.signOut();
+      // Local state belongs to the signed-out account — clear it so the next
+      // person on this device doesn't inherit (or merge in) someone else's data.
+      try { localStorage.removeItem('flickpick_state'); localStorage.removeItem('flickpick_auth'); } catch (e) {}
+      showToast('Signed out', 'success');
+      setTimeout(() => location.reload(), 500);
+    } catch (e) {
+      console.error('Sign out error:', e);
+      showToast('Could not sign out', 'error');
+      btn.disabled = false;
+      updateSignoutBtn();
+    }
+  });
+})();
+
 function renderAccountModal() {
   const body = document.getElementById('accountModalBody');
   const user = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
@@ -6035,11 +6593,98 @@ try {
 // FIRESTORE USER DATA SYNC
 // ============================================================
 let firestoreUser = null; // Current authenticated user
+let cloudStamp = 0;       // ms of the newest cloud write we've seen (conflict guard)
+
+function tsToMs(ts) {
+  if (!ts) return 0;
+  if (typeof ts.toMillis === 'function') return ts.toMillis();
+  if (typeof ts.seconds === 'number') return ts.seconds * 1000;
+  const n = Number(ts);
+  return isNaN(n) ? 0 : n;
+}
+
+// Union two arrays of records by key, keeping the record with the newer stamp.
+function mergeById(localArr, cloudArr, keyFn, stampFn) {
+  const map = new Map();
+  [...(cloudArr || []), ...(localArr || [])].forEach(item => {
+    if (!item) return;
+    let k;
+    try { k = keyFn(item); } catch (e) { k = null; }
+    if (k === null || k === undefined) return;
+    const prev = map.get(k);
+    if (!prev || (stampFn(item) || 0) >= (stampFn(prev) || 0)) map.set(k, item);
+  });
+  return [...map.values()];
+}
+
+// Merge cloud appState INTO local state. Never wholesale-replace: a guest list
+// logging into an account, or a second device, must UNION with the cloud copy —
+// replacing in either direction is how watchlists got silently erased.
+function mergeCloudState(s) {
+  if (!s) return;
+  state.watchlist = mergeById(state.watchlist, s.watchlist, i => i.movie && i.movie.id, i => i.addedAt || 0);
+  state.watched = mergeById(state.watched, s.watched, i => i.movie && i.movie.id, i => i.watchedAt || 0);
+  // A movie watched anywhere shouldn't linger in To-Watch.
+  const watchedIds = new Set(state.watched.map(i => i.movie.id));
+  state.watchlist = state.watchlist.filter(i => !watchedIds.has(i.movie.id));
+  state.seenMovieIds = [...new Set([...(state.seenMovieIds || []), ...(s.seenMovieIds || [])])];
+  state.swipedCount = Math.max(state.swipedCount || 0, s.swipedCount || 0);
+  state.rightSwipeCount = Math.max(state.rightSwipeCount || 0, s.rightSwipeCount || 0);
+  // Streak: the (lastSwipeDate, streakCount) pair with the newer date wins outright.
+  if (s.lastSwipeDate && (!state.lastSwipeDate || s.lastSwipeDate > state.lastSwipeDate)) {
+    state.lastSwipeDate = s.lastSwipeDate;
+    state.streakCount = s.streakCount || 0;
+  } else if (s.lastSwipeDate && s.lastSwipeDate === state.lastSwipeDate) {
+    state.streakCount = Math.max(state.streakCount || 0, s.streakCount || 0);
+  }
+  state.partyHistory = mergeById(state.partyHistory, s.partyHistory,
+    p => (p.code ? `${p.code}_${p.date || ''}` : JSON.stringify(p)), p => p.date || 0).slice(-30);
+  state.friends = mergeById(state.friends, s.friends, f => f.name || JSON.stringify(f), () => 0);
+  // Dislike counters accumulate independently per device; per-key max is the safe union.
+  ['dislikedGenres', 'dislikedDecades'].forEach(k => {
+    const merged = Object.assign({}, s[k] || {});
+    Object.entries(state[k] || {}).forEach(([g, n]) => { merged[g] = Math.max(merged[g] || 0, n); });
+    state[k] = merged;
+  });
+  if (Array.isArray(s.streamingServices) && s.streamingServices.length) state.streamingServices = s.streamingServices;
+  if (Array.isArray(s.onboardingGenres) && s.onboardingGenres.length) state.onboardingGenres = s.onboardingGenres;
+  if (s.filters) state.filters = s.filters;
+  if (s.activeMood) state.activeMood = s.activeMood;
+  if (s.isDarkMode !== undefined) state.isDarkMode = s.isDarkMode;
+  if (s.region) state.region = s.region;
+  if (s.watchedSort) state.watchedSort = s.watchedSort;
+}
+
+function renderAfterCloudMerge() {
+  try {
+    renderProfile();
+    renderWatchlist();
+    if (typeof updateStreakChip === 'function') updateStreakChip();
+    if (typeof updateSignoutBtn === 'function') updateSignoutBtn();
+  } catch (e) { /* screens not mounted yet */ }
+}
 
 async function saveUserDataToFirestore() {
   if (!firestore || !firestoreUser) return;
   try {
-    await firestore.collection('users').doc(firestoreUser.uid).set({
+    const ref = firestore.collection('users').doc(firestoreUser.uid);
+    // Conflict guard: if another device wrote since we last synced, pull and
+    // merge its data FIRST so this save can't roll the cloud copy backwards
+    // (the classic stale-tab / second-device clobber).
+    try {
+      const snap = await ref.get();
+      if (snap.exists) {
+        const remote = snap.data();
+        const remoteMs = tsToMs(remote.lastUpdated);
+        if (remoteMs > cloudStamp && remote.appState) {
+          mergeCloudState(remote.appState);
+          persistLocal();
+          renderAfterCloudMerge();
+        }
+        if (remoteMs) cloudStamp = remoteMs;
+      }
+    } catch (e) { /* read failed (offline) — proceed best-effort, set() is merge:true */ }
+    await ref.set({
       displayName: firestoreUser.displayName || firestoreUser.email?.split('@')[0] || 'User',
       email: firestoreUser.email || null,
       lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
@@ -6057,37 +6702,35 @@ async function saveUserDataToFirestore() {
         filters: state.filters,
         activeMood: state.activeMood,
         isDarkMode: state.isDarkMode,
+        region: state.region || 'US',
+        watchedSort: state.watchedSort || 'date',
+        dislikedGenres: state.dislikedGenres || {},
+        dislikedDecades: state.dislikedDecades || {},
+        onboardingGenres: state.onboardingGenres || [],
       }
     }, { merge: true });
+    cloudStamp = Date.now();
   } catch (e) { console.warn('Firestore save error:', e); }
 }
 
+// Returns 'loaded' | 'empty' | 'error'. Callers MUST treat 'error' differently
+// from 'empty' — overwriting the cloud copy after a failed READ is how a
+// returning user's data got erased by a fresh device.
 async function loadUserDataFromFirestore() {
-  if (!firestore || !firestoreUser) return false;
+  if (!firestore || !firestoreUser) return 'error';
   try {
     const doc = await firestore.collection('users').doc(firestoreUser.uid).get();
     if (doc.exists && doc.data().appState) {
-      const s = doc.data().appState;
-      state.watchlist = s.watchlist || state.watchlist;
-      state.watched = s.watched || state.watched;
-      state.swipedCount = s.swipedCount || state.swipedCount;
-      state.streamingServices = s.streamingServices || state.streamingServices;
-      state.seenMovieIds = s.seenMovieIds || state.seenMovieIds;
-      state.rightSwipeCount = s.rightSwipeCount || state.rightSwipeCount;
-      state.lastSwipeDate = s.lastSwipeDate || state.lastSwipeDate;
-      state.streakCount = s.streakCount || state.streakCount;
-      state.partyHistory = s.partyHistory || state.partyHistory;
-      state.friends = s.friends || state.friends;
-      state.filters = s.filters || state.filters;
-      state.activeMood = s.activeMood || state.activeMood;
-      if (s.isDarkMode !== undefined) state.isDarkMode = s.isDarkMode;
-      saveState(); // Sync to localStorage too
-      return true;
+      mergeCloudState(doc.data().appState);
+      cloudStamp = tsToMs(doc.data().lastUpdated) || Date.now();
+      persistLocal(); // localStorage only — no need to bounce straight back to the cloud
+      renderAfterCloudMerge();
+      return 'loaded';
     }
-    return false;
+    return 'empty';
   } catch (e) {
     console.warn('Firestore load error:', e);
-    return false;
+    return 'error';
   }
 }
 
@@ -6096,22 +6739,38 @@ let cloudSaveTimer = null;
 function scheduleCloudSave() {
   if (!firestoreUser) return;
   clearTimeout(cloudSaveTimer);
-  cloudSaveTimer = setTimeout(saveUserDataToFirestore, 3000);
+  cloudSaveTimer = setTimeout(() => { cloudSaveTimer = null; saveUserDataToFirestore(); }, 3000);
 }
 
-// Clean up stale parties older than 24 hours (runs once on party creation)
+// Flush a pending debounced save when the tab is backgrounded or closed, so a
+// rating made seconds before closing isn't lost to the 3s debounce window.
+function flushCloudSave() {
+  if (!firestoreUser || !cloudSaveTimer) return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = null;
+  saveUserDataToFirestore();
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') flushCloudSave();
+});
+window.addEventListener('pagehide', flushCloudSave);
+
+// Clean up stale parties older than 24 hours (runs once on party creation).
+// Security rules deliberately block listing /parties (no room enumeration), so
+// we only tidy rooms this device knows about — the ones in its party history.
+// Anyone may delete a room once it's >24h old (allowed by the rules), so rooms
+// get swept as their participants come back to play again.
 async function cleanupStaleParties() {
   if (!db) return;
-  try {
-    const cutoff = Date.now() - (24 * 60 * 60 * 1000);
-    const snap = await db.ref('parties').orderByChild('metadata/createdAt').endAt(cutoff).limitToFirst(20).once('value');
-    const stale = snap.val();
-    if (stale) {
-      const updates = {};
-      Object.keys(stale).forEach(code => { updates[code] = null; });
-      await db.ref('parties').update(updates);
-    }
-  } catch (e) { /* silent cleanup */ }
+  const cutoff = Date.now() - (24 * 60 * 60 * 1000);
+  const codes = [...new Set((state.partyHistory || []).map(p => p.code).filter(Boolean))].slice(-15);
+  for (const code of codes) {
+    try {
+      const snap = await db.ref(`parties/${code}/metadata/createdAt`).once('value');
+      const createdAt = snap.val();
+      if (createdAt && createdAt < cutoff) await db.ref(`parties/${code}`).remove();
+    } catch (e) { /* already gone or not deletable — fine */ }
+  }
 }
 
 const MEMBER_COLORS = [
@@ -6143,6 +6802,10 @@ let party = {
 };
 
 function generateMemberId() {
+  // Use the Firebase auth uid as the member id so the security rules can verify
+  // "this member entry / vote / reaction belongs to me". ensurePartyAuth() runs
+  // before every create/join, so a signed-in (possibly anonymous) user exists.
+  if (typeof auth !== 'undefined' && auth && auth.currentUser) return auth.currentUser.uid;
   return 'mb_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
 }
 
@@ -6991,24 +7654,33 @@ function renderResults(allVotes) {
 
   const content = document.getElementById('resultsContent');
   let html = '';
+  let heroEntry = null; // strongest match — celebrated with a hero card (F8)
 
   if (unanimous.length > 0) {
     document.getElementById('resultsTitle').textContent = `${unanimous.length} Match${unanimous.length > 1 ? 'es' : ''}!`;
     document.getElementById('resultsSubtitle').textContent = "Everyone agreed on these movies";
-    html += '<div class="results-section-title">&#127881; Unanimous Picks</div>';
-    unanimous.forEach(({ movie }) => {
-      html += buildResultCard(movie, memberCount, memberCount, true);
-    });
+    heroEntry = unanimous[0];
+    html += buildResultsHero(heroEntry.movie, memberCount, memberCount, true);
+    if (unanimous.length > 1) {
+      html += '<div class="results-section-title">&#127881; Also Unanimous</div>';
+      unanimous.slice(1).forEach(({ movie }) => {
+        html += buildResultCard(movie, memberCount, memberCount, true);
+      });
+    }
   } else {
     document.getElementById('resultsTitle').textContent = 'No Perfect Matches';
     document.getElementById('resultsSubtitle').textContent = "Nobody agreed on the same movie, but here are the closest";
   }
 
   if (nearMatches.length > 0 && unanimous.length === 0) {
-    html += '<div class="results-section-title">&#128293; Closest Matches</div>';
-    nearMatches.slice(0, 5).forEach(({ movie, yesCount }) => {
-      html += buildResultCard(movie, yesCount, memberCount, false);
-    });
+    heroEntry = nearMatches[0];
+    html += buildResultsHero(heroEntry.movie, heroEntry.yesCount, memberCount, false);
+    if (nearMatches.length > 1) {
+      html += '<div class="results-section-title">&#128293; Closest Matches</div>';
+      nearMatches.slice(1, 6).forEach(({ movie, yesCount }) => {
+        html += buildResultCard(movie, yesCount, memberCount, false);
+      });
+    }
   } else if (nearMatches.length > 0) {
     html += '<div class="results-section-title" style="margin-top:20px">&#128293; Almost Made It</div>';
     nearMatches.slice(0, 3).forEach(({ movie, yesCount }) => {
@@ -7025,22 +7697,65 @@ function renderResults(allVotes) {
 
   content.innerHTML = html;
 
+  // Hero actions: jump straight to the trailer, full details, or scheduling
+  if (heroEntry) {
+    const heroMovie = heroEntry.movie;
+    content.querySelectorAll('[data-hero-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const act = btn.dataset.heroAction;
+        if (act === 'trailer') {
+          openTrailerFor(Object.assign({}, heroMovie, { _tmdbId: heroMovie.id }));
+        } else if (act === 'details') {
+          openDetailPanel(Object.assign({ providers: [], cast: [], streaming: [] }, heroMovie, { _tmdbId: heroMovie.id, _detailsLoaded: false }));
+        } else if (act === 'schedule') {
+          openScheduleModal();
+        }
+      });
+    });
+  }
+
   // Show restart button for host if no unanimous matches
   const newBtn = document.getElementById('resultsNewBtn');
   newBtn.style.display = (party.isHost && unanimous.length === 0) ? 'block' : 'none';
 }
 
+// Big celebratory card for the top match: blurred-poster banner, vote count,
+// and jump-to-trailer / details / schedule actions (F8).
+function buildResultsHero(movie, yesCount, total, isUnanimous) {
+  const poster = movie.poster || '';
+  const kicker = isUnanimous ? "&#127881; It's a match!" : '&#128293; Crowd favorite';
+  const votes = isUnanimous ? `All ${total} of you said yes` : `${yesCount} of ${total} said yes`;
+  const genres = (movie.genres || []).slice(0, 2).join(' · ');
+  return `<div class="results-hero">
+    <div class="results-hero-banner">
+      ${poster ? `<div class="results-hero-bg" style="background-image:url('${escapeHtml(poster)}')"></div>
+      <img class="results-hero-poster" src="${escapeHtml(poster)}" alt="${escapeHtml(movie.title || '')}" referrerpolicy="no-referrer">` : ''}
+    </div>
+    <div class="results-hero-body">
+      <div class="results-hero-kicker">${kicker}</div>
+      <div class="results-hero-title">${escapeHtml(movie.title || '')}</div>
+      <div class="results-hero-meta">${movie.year || ''}${genres ? ' &middot; ' + escapeHtml(genres) : ''}${movie.rating ? ` &middot; &#9733; ${movie.rating}` : ''}</div>
+      <div class="results-hero-votes">${votes}</div>
+      <div class="results-hero-actions">
+        <button class="results-hero-btn primary" data-hero-action="trailer">&#9654; Trailer</button>
+        <button class="results-hero-btn" data-hero-action="details">Details</button>
+        <button class="results-hero-btn" data-hero-action="schedule">&#128197; Schedule</button>
+      </div>
+    </div>
+  </div>`;
+}
+
 function buildResultCard(movie, yesCount, total, isUnanimous) {
   const posterSrc = movie.poster || '';
-  const posterImg = posterSrc ? `<img class="results-match-poster" src="${posterSrc}" alt="${movie.title}">` : '';
+  const posterImg = posterSrc ? `<img class="results-match-poster" src="${escapeHtml(posterSrc)}" alt="${escapeHtml(movie.title || '')}" referrerpolicy="no-referrer">` : '';
   const cls = isUnanimous ? 'results-unanimous' : 'results-near';
   const voteText = isUnanimous ? `${total}/${total} voted yes!` : `${yesCount}/${total} voted yes`;
   const genres = (movie.genres || []).slice(0, 2).join(', ');
   return `<div class="results-match-card ${cls}">
     ${posterImg}
     <div class="results-match-info">
-      <div class="results-match-title">${movie.title}</div>
-      <div class="results-match-meta">${movie.year || ''} ${genres ? '· ' + genres : ''}</div>
+      <div class="results-match-title">${escapeHtml(movie.title || '')}</div>
+      <div class="results-match-meta">${movie.year || ''} ${genres ? '· ' + escapeHtml(genres) : ''}</div>
       <div class="results-match-votes">${voteText}</div>
     </div>
   </div>`;
@@ -7049,28 +7764,41 @@ function buildResultCard(movie, yesCount, total, isUnanimous) {
 // Movie Night Countdown
 let countdownInterval = null;
 
-document.getElementById('scheduleMovieNightBtn').addEventListener('click', () => {
-  const dateInput = prompt('Pick a date (YYYY-MM-DD):');
-  if (!dateInput) return;
-  const timeInput = prompt('Pick a time (HH:MM in 24h format):');
-  if (!timeInput) return;
+// Schedule Movie Night — proper date/time sheet instead of prompt() dialogs (F8)
+function openScheduleModal() {
+  const err = document.getElementById('scheduleError');
+  if (err) err.textContent = '';
+  const d = document.getElementById('scheduleDate');
+  const t = document.getElementById('scheduleTime');
+  if (d && !d.value) {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const mo = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const da = String(tomorrow.getDate()).padStart(2, '0');
+    d.value = `${tomorrow.getFullYear()}-${mo}-${da}`;
+  }
+  if (t && !t.value) t.value = '19:00';
+  openModal('scheduleModal');
+}
 
-  const [year, month, day] = dateInput.split('-').map(Number);
-  const [hour, minute] = timeInput.split(':').map(Number);
+document.getElementById('scheduleMovieNightBtn').addEventListener('click', openScheduleModal);
+document.getElementById('scheduleModalClose').addEventListener('click', () => closeModal('scheduleModal'));
+document.getElementById('scheduleConfirmBtn').addEventListener('click', () => {
+  const err = document.getElementById('scheduleError');
+  const dv = document.getElementById('scheduleDate').value;
+  const tv = document.getElementById('scheduleTime').value;
+  if (!dv || !tv) { err.textContent = 'Pick both a date and a time.'; return; }
 
-  if (!year || !month || !day || hour === undefined || minute === undefined) {
-    showToast('Invalid date or time format', 'info');
+  const [year, month, day] = dv.split('-').map(Number);
+  const [hour, minute] = tv.split(':').map(Number);
+  if (!year || !month || !day || isNaN(hour) || isNaN(minute)) {
+    err.textContent = 'Invalid date or time.';
     return;
   }
 
   const dt = new Date(year, month - 1, day, hour, minute, 0);
-  const now = new Date();
+  if (dt <= new Date()) { err.textContent = 'Movie night must be in the future.'; return; }
 
-  if (dt <= now) {
-    showToast('Date/time must be in the future', 'info');
-    return;
-  }
-
+  closeModal('scheduleModal');
   if (db && party.code) {
     db.ref(`parties/${party.code}/metadata/movieNight`).set({
       datetime: dt.toISOString(),
@@ -7078,6 +7806,8 @@ document.getElementById('scheduleMovieNightBtn').addEventListener('click', () =>
     }).then(() => {
       showToast('Movie night scheduled!', 'success');
       startMovieNightCountdown(dt.getTime());
+    }).catch(() => {
+      showToast('Could not schedule — check your connection', 'error');
     });
   } else {
     startMovieNightCountdown(dt.getTime());
@@ -7161,6 +7891,295 @@ document.getElementById('resultsNewBtn').addEventListener('click', async () => {
 });
 
 // ============================================================
+// DISCOVER SEARCH (F2) — movies + people via TMDB /search/multi
+// ============================================================
+(function initSearch() {
+  const overlay = document.getElementById('searchOverlay');
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+  const btn = document.getElementById('searchBtn');
+  const cancel = document.getElementById('searchCancel');
+  if (!overlay || !btn) return;
+  const HINT = '<div class="search-hint">Find a specific movie, or explore an actor\'s filmography.</div>';
+  let searchTimer = null;
+  let searchGen = 0;
+  let lastMovies = [];
+
+  function openSearch() {
+    overlay.classList.add('open');
+    document.getElementById('fabContainer').style.display = 'none';
+    setTimeout(() => input.focus(), 80);
+  }
+  function closeSearch() {
+    overlay.classList.remove('open');
+    input.blur();
+    if (state.activeTab === 'discover') document.getElementById('fabContainer').style.display = 'block';
+  }
+  window.closeSearchOverlay = closeSearch;
+  btn.addEventListener('click', openSearch);
+  cancel.addEventListener('click', closeSearch);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('open')) closeSearch();
+  });
+
+  input.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    const q = input.value.trim();
+    if (!q) { searchGen++; results.innerHTML = HINT; return; }
+    searchTimer = setTimeout(() => runSearch(q), 350);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      clearTimeout(searchTimer);
+      const q = input.value.trim();
+      if (q) runSearch(q);
+      input.blur();
+    }
+  });
+
+  async function runSearch(query) {
+    const myGen = ++searchGen;
+    results.innerHTML = '<div class="search-hint">Searching&hellip;</div>';
+    try {
+      const raw = await TMDB.searchMulti(query);
+      if (myGen !== searchGen) return; // superseded by newer keystrokes
+      const movies = raw.filter(r => r && r.media_type === 'movie').slice(0, 12);
+      const people = raw.filter(r => r && r.media_type === 'person').slice(0, 5);
+      lastMovies = movies;
+      if (!movies.length && !people.length) {
+        results.innerHTML = `<div class="search-hint">No results for &ldquo;${escapeHtml(query)}&rdquo;.</div>`;
+        return;
+      }
+      let html = '';
+      if (movies.length) {
+        html += '<div class="search-section-label">Movies</div>';
+        html += movies.map(m => {
+          const poster = m.poster_path ? `${TMDB.IMG}/w92${m.poster_path}` : null;
+          const year = m.release_date ? m.release_date.substring(0, 4) : '';
+          const rating = m.vote_average ? `&#9733; ${m.vote_average.toFixed(1)}` : '';
+          return `<div class="search-row" data-kind="movie" data-id="${m.id}" role="button">
+            ${poster ? `<img class="search-row-poster" src="${escapeHtml(poster)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<div class="search-row-poster"></div>'}
+            <div class="search-row-info">
+              <div class="search-row-title">${escapeHtml(m.title || '')}</div>
+              <div class="search-row-meta">${year}${year && rating ? ' &middot; ' : ''}${rating}</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+      if (people.length) {
+        html += '<div class="search-section-label">People</div>';
+        html += people.map(p => {
+          const photo = p.profile_path ? `${TMDB.IMG}/w185${p.profile_path}` : null;
+          const knownFor = (p.known_for || []).map(k => k.title || k.name).filter(Boolean).slice(0, 2).join(', ');
+          return `<div class="search-row" data-kind="person" data-id="${p.id}" data-name="${escapeHtml(p.name || '')}" role="button">
+            ${photo ? `<img class="search-row-poster person" src="${escapeHtml(photo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<div class="search-row-poster person"></div>'}
+            <div class="search-row-info">
+              <div class="search-row-title">${escapeHtml(p.name || '')}</div>
+              <div class="search-row-meta">${escapeHtml(p.known_for_department || 'Acting')}${knownFor ? ' &middot; ' + escapeHtml(knownFor) : ''}</div>
+            </div>
+            <div class="search-row-badge">Person</div>
+          </div>`;
+        }).join('');
+      }
+      results.innerHTML = html;
+      results.querySelectorAll('.search-row[data-kind="movie"]').forEach(row => {
+        row.addEventListener('click', () => {
+          const hit = lastMovies.find(m => String(m.id) === row.dataset.id);
+          if (!hit) return;
+          openDetailPanel(TMDB.mapMovie(hit));
+        });
+      });
+      results.querySelectorAll('.search-row[data-kind="person"]').forEach(row => {
+        row.addEventListener('click', () => openPersonPanel(Number(row.dataset.id), row.dataset.name || ''));
+      });
+    } catch (e) {
+      if (myGen !== searchGen) return;
+      console.error('Search error:', e);
+      results.innerHTML = '<div class="search-hint">Search failed — check your connection and try again.</div>';
+    }
+  }
+})();
+
+// ============================================================
+// PEOPLE PAGES (F9) — actor/director bio + filmography
+// ============================================================
+const personPanel = document.getElementById('personPanel');
+const personBody = document.getElementById('personBody');
+const personHeaderName = document.getElementById('personHeaderName');
+let personFilmography = [];
+
+async function openPersonPanel(personId, name) {
+  if (!personId) return;
+  closeDetailPanel(); // person page replaces the movie detail (simple back-stack)
+  personHeaderName.textContent = name || '';
+  personBody.innerHTML = '<div class="search-hint">Loading&hellip;</div>';
+  personPanel.classList.add('open');
+  const fab = document.getElementById('fabContainer');
+  if (fab) fab.style.display = 'none';
+  try {
+    const p = await TMDB.fetchPerson(personId);
+    if (!personPanel.classList.contains('open')) return; // closed while loading
+    if (!p || !p.id) throw new Error('bad person payload');
+    renderPersonContent(p);
+  } catch (e) {
+    console.error('Person load error:', e);
+    personBody.innerHTML = '<div class="search-hint" id="personRetry" style="cursor:pointer">Couldn\'t load this person.<br><b style="color:var(--accent)">Tap to retry</b></div>';
+    const r = document.getElementById('personRetry');
+    if (r) r.addEventListener('click', () => openPersonPanel(personId, name));
+  }
+}
+
+function renderPersonContent(p) {
+  personHeaderName.textContent = p.name || '';
+  const photo = p.profile_path ? `${TMDB.IMG}/w185${p.profile_path}` : null;
+  const initials = escapeHtml((p.name || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase());
+  const born = p.birthday ? `Born ${p.birthday}${p.place_of_birth ? ` · ${p.place_of_birth}` : ''}` : (p.place_of_birth || '');
+  const dept = p.known_for_department || 'Acting';
+  const bio = (p.biography || '').trim();
+
+  // Filmography: acting + directing credits, best-known first, deduped
+  const cast = (p.movie_credits && p.movie_credits.cast) || [];
+  const directed = ((p.movie_credits && p.movie_credits.crew) || []).filter(c => c.job === 'Director');
+  const pool = dept === 'Directing' && directed.length ? [...directed, ...cast] : [...cast, ...directed];
+  const seenIds = new Set();
+  personFilmography = pool
+    .filter(c => c && c.poster_path && !seenIds.has(c.id) && seenIds.add(c.id))
+    .sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0))
+    .slice(0, 18);
+
+  personBody.innerHTML = `
+    <div class="person-hero">
+      ${photo
+        ? `<img class="person-photo" src="${escapeHtml(photo)}" alt="${escapeHtml(p.name || '')}" referrerpolicy="no-referrer">`
+        : `<div class="person-photo">${initials}</div>`}
+      <div>
+        <div class="person-meta-name">${escapeHtml(p.name || '')}</div>
+        <div class="person-meta-sub">${escapeHtml(dept)}${born ? `<br>${escapeHtml(born)}` : ''}</div>
+      </div>
+    </div>
+    ${bio ? `<div class="detail-section-label">Biography</div>
+    <div class="person-bio clamped" id="personBio">${escapeHtml(bio).replace(/\n+/g, '<br><br>')}</div>
+    <div class="person-bio-more" id="personBioMore">Read more</div>` : ''}
+    ${personFilmography.length ? '<div class="detail-section-label">Known For</div>' : ''}
+    <div class="filmography-grid">
+      ${personFilmography.map(c => `
+        <div class="filmography-card" data-id="${c.id}" role="button">
+          <img class="filmography-poster" src="${TMDB.IMG}/w185${c.poster_path}" alt="${escapeHtml(c.title || '')}" loading="lazy" referrerpolicy="no-referrer">
+          <div class="filmography-title">${escapeHtml(c.title || '')}</div>
+          <div class="filmography-year">${c.release_date ? c.release_date.substring(0, 4) : ''}${c.job === 'Director' ? ' &middot; Director' : ''}</div>
+        </div>`).join('')}
+    </div>`;
+
+  const bioEl = document.getElementById('personBio');
+  const moreEl = document.getElementById('personBioMore');
+  if (moreEl && bioEl) {
+    // Hide the toggle when the bio is short enough to fit unclamped anyway
+    requestAnimationFrame(() => {
+      if (bioEl.scrollHeight <= bioEl.clientHeight + 4) moreEl.style.display = 'none';
+    });
+    moreEl.addEventListener('click', () => {
+      const clamped = bioEl.classList.toggle('clamped');
+      moreEl.textContent = clamped ? 'Read more' : 'Show less';
+    });
+  }
+
+  personBody.querySelectorAll('.filmography-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const credit = personFilmography.find(c => String(c.id) === card.dataset.id);
+      if (!credit) return;
+      closePersonPanel();
+      openDetailPanel(TMDB.mapMovie(credit));
+    });
+  });
+}
+
+function closePersonPanel() {
+  personPanel.classList.remove('open');
+  personBody.scrollTop = 0;
+  const searchOpen = document.getElementById('searchOverlay').classList.contains('open');
+  if (state.activeTab === 'discover' && !searchOpen && !detailPanel.classList.contains('open')) {
+    const fab = document.getElementById('fabContainer');
+    if (fab) fab.style.display = 'block';
+  }
+}
+document.getElementById('personClose').addEventListener('click', closePersonPanel);
+
+// ============================================================
+// ONBOARDING (F1) — first-run taste picker
+// ============================================================
+function maybeStartOnboarding() {
+  try {
+    if (localStorage.getItem('flickpick_onboarded')) return;
+    // Only for genuinely fresh users — anyone with swipes or saves has a taste already.
+    if ((state.swipedCount || 0) > 0 || (state.watchlist || []).length > 0 || (state.watched || []).length > 0) {
+      localStorage.setItem('flickpick_onboarded', '1');
+      return;
+    }
+    openOnboarding();
+  } catch (e) { /* storage unavailable — skip quietly */ }
+}
+
+const OB_FALLBACK_GENRES = ['Action', 'Adventure', 'Animation', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Family', 'Fantasy', 'History', 'Horror', 'Music', 'Mystery', 'Romance', 'Science Fiction', 'Thriller', 'War', 'Western'];
+
+function openOnboarding() {
+  const overlay = document.getElementById('onboardingOverlay');
+  const genresEl = document.getElementById('onboardingGenres');
+  const servicesEl = document.getElementById('onboardingServices');
+  const regionEl = document.getElementById('onboardingRegion');
+  if (!overlay) return;
+
+  const names = (TMDB.genreList && TMDB.genreList.length)
+    ? TMDB.genreList.map(g => g.name)
+    : OB_FALLBACK_GENRES;
+  genresEl.innerHTML = names.map(n =>
+    `<div class="ob-genre-chip" data-genre="${escapeHtml(n)}" role="button">${escapeHtml(n)}</div>`
+  ).join('');
+  genresEl.querySelectorAll('.ob-genre-chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+
+  servicesEl.innerHTML = STREAMING_SERVICES.map(s => `
+    <div class="ob-service-chip ${state.streamingServices.includes(s.name) ? 'active' : ''}" data-service="${escapeHtml(s.name)}" role="button">
+      <span class="ob-service-dot" style="background:${s.color}"></span>${escapeHtml(s.name)}
+    </div>`).join('');
+  servicesEl.querySelectorAll('.ob-service-chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+
+  // Region options: clone the Profile settings list — one source of truth.
+  regionEl.innerHTML = document.getElementById('regionSelect').innerHTML;
+  regionEl.value = state.region || 'US';
+
+  overlay.classList.add('open');
+}
+
+async function finishOnboarding(skipped) {
+  const overlay = document.getElementById('onboardingOverlay');
+  try { localStorage.setItem('flickpick_onboarded', '1'); } catch (e) {}
+  overlay.classList.remove('open');
+  if (skipped) return;
+
+  const genres = [...document.querySelectorAll('#onboardingGenres .ob-genre-chip.active')].map(c => c.dataset.genre);
+  const services = [...document.querySelectorAll('#onboardingServices .ob-service-chip.active')].map(c => c.dataset.service);
+  const region = document.getElementById('onboardingRegion').value || 'US';
+  state.onboardingGenres = genres;
+  state.streamingServices = services; // empty = "show me everything" (no provider filter)
+  state.region = region;
+  const sel = document.getElementById('regionSelect');
+  if (sel) sel.value = region;
+  saveState();
+  renderProfile();
+
+  // Rebuild the deck so the very first cards already match the picked taste.
+  cardContainer.innerHTML = skeletonCardHTML();
+  await resetMovies(getCurrentFilters());
+  renderCard(state.currentIndex, true);
+  if (genres.length || services.length) showToast('Deck tuned to your taste!', 'success');
+}
+document.getElementById('onboardingStart').addEventListener('click', () => finishOnboarding(false));
+document.getElementById('onboardingSkip').addEventListener('click', () => finishOnboarding(true));
+
+// ============================================================
 // AUTH SCREEN — Firebase Auth (with skip for demo mode)
 // ============================================================
 (function initAuth() {
@@ -7176,12 +8195,13 @@ document.getElementById('resultsNewBtn').addEventListener('click', async () => {
       if (user && !user.isAnonymous) {
         firestoreUser = user;
         const displayName = user.displayName || user.email?.split('@')[0] || 'User';
-        // Load cloud data (merges with any existing localStorage data)
+        // Load cloud data (merges by id with any existing localStorage data)
         await loadUserDataFromFirestore();
         dismissAuth(displayName);
       }
       // Anonymous sign-ins (used to enable Party Mode for guests) are intentionally
       // ignored here — they don't change the profile or touch Firestore.
+      updateSignoutBtn();
     });
   }
 
@@ -7229,8 +8249,11 @@ document.getElementById('resultsNewBtn').addEventListener('click', async () => {
       timestamp: Date.now()
     }));
     applyProfileIdentity(displayName);
+    updateSignoutBtn();
     authScreen.classList.add('hidden');
     setTimeout(() => authScreen.style.display = 'none', 400);
+    // First run on this device? Offer the 20-second taste picker.
+    if (typeof maybeStartOnboarding === 'function') maybeStartOnboarding();
   }
 
   function showAuthError(el, msg) { el.textContent = msg; }
@@ -7304,7 +8327,11 @@ document.getElementById('resultsNewBtn').addEventListener('click', async () => {
       const cred = await auth.signInWithEmailAndPassword(email, password);
       firestoreUser = cred.user;
       const displayName = cred.user.displayName || email.split('@')[0];
-      await loadUserDataFromFirestore();
+      const syncStatus = await loadUserDataFromFirestore();
+      // Push the merged union back up — but NEVER after a failed read, which
+      // would overwrite the account's cloud data with this device's copy.
+      if (syncStatus !== 'error') await saveUserDataToFirestore();
+      else showToast("Couldn't reach your cloud data — will sync when connection returns", 'info');
       dismissAuth(displayName);
       showToast(`Welcome back, ${displayName}!`, 'success');
     } catch (err) {
@@ -7323,9 +8350,11 @@ document.getElementById('resultsNewBtn').addEventListener('click', async () => {
       const cred = await auth.signInWithPopup(provider);
       firestoreUser = cred.user;
       const displayName = cred.user.displayName || cred.user.email?.split('@')[0] || 'User';
-      // If new user, migrate localStorage. If returning, load cloud data.
-      const loaded = await loadUserDataFromFirestore();
-      if (!loaded) await saveUserDataToFirestore();
+      // Merge cloud + local, then push the union back. On a failed READ do
+      // NOT save — that clobbered returning users' data with an empty device.
+      const syncStatus = await loadUserDataFromFirestore();
+      if (syncStatus !== 'error') await saveUserDataToFirestore();
+      else showToast("Couldn't reach your cloud data — will sync when connection returns", 'info');
       dismissAuth(displayName);
       showToast(`Welcome, ${displayName}!`, 'success');
     } catch (err) {
@@ -7345,8 +8374,9 @@ document.getElementById('resultsNewBtn').addEventListener('click', async () => {
       const cred = await auth.signInWithPopup(provider);
       firestoreUser = cred.user;
       const displayName = cred.user.displayName || cred.user.email?.split('@')[0] || 'User';
-      const loaded = await loadUserDataFromFirestore();
-      if (!loaded) await saveUserDataToFirestore();
+      const syncStatus = await loadUserDataFromFirestore();
+      if (syncStatus !== 'error') await saveUserDataToFirestore();
+      else showToast("Couldn't reach your cloud data — will sync when connection returns", 'info');
       dismissAuth(displayName);
       showToast(`Welcome, ${displayName}!`, 'success');
     } catch (err) {
@@ -7359,6 +8389,24 @@ document.getElementById('resultsNewBtn').addEventListener('click', async () => {
   // Skip button — guest mode, localStorage only
   document.getElementById('authSkip').addEventListener('click', () => {
     dismissAuth(null);
+  });
+
+  // Forgot password — Firebase reset email
+  document.getElementById('authForgot').addEventListener('click', async () => {
+    const email = document.getElementById('authLoginEmail').value.trim();
+    const errorEl = document.getElementById('authLoginError');
+    if (!email || !email.includes('@')) {
+      showAuthError(errorEl, 'Enter your email above, then tap "Forgot password?" again.');
+      return;
+    }
+    if (!auth) { showAuthError(errorEl, 'Network error. Please check your connection.'); return; }
+    try {
+      await auth.sendPasswordResetEmail(email);
+      clearAuthError(errorEl);
+      showToast('Password reset email sent — check your inbox', 'success');
+    } catch (err) {
+      showAuthError(errorEl, friendlyError(err.code));
+    }
   });
 
   // Enter key support on inputs
@@ -7387,12 +8435,8 @@ document.getElementById('app').addEventListener('scroll', function() {
   updateRewindBtn();
   updateFilterBadge();
 
-  // Show loading state
-  cardContainer.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:16px">
-      <div style="font-size:48px;animation:pulse 1.5s infinite">🎬</div>
-      <div style="color:var(--text-secondary);font-size:15px;font-weight:600">Connecting to TMDB...</div>
-    </div>`;
+  // Show loading state — skeleton card (F11)
+  cardContainer.innerHTML = skeletonCardHTML('Connecting to TMDB');
 
   try {
     await TMDB.init();
@@ -7405,6 +8449,8 @@ document.getElementById('app').addEventListener('scroll', function() {
 
     renderCard(state.currentIndex);
     renderProfile();
+    updateStreakChip();
+    updateSignoutBtn();
   } catch (e) {
     console.error('Failed to initialize TMDB:', e);
     cardContainer.innerHTML = `
